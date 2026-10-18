@@ -1,0 +1,21 @@
+{
+  "name": "SSMarkdown.Editor",
+  "rootNamespace": "SS.UIComponent.Editor",
+  "references": [
+    "SSMarkdown.Runtime",
+    "SSMarkdown.Demo",
+    "Unity.ugui",
+    "UnityEditor.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

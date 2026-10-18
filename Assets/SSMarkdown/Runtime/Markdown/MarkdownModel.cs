@@ -1,0 +1,145 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace SS.UIComponent
+{
+    /// <summary>The kind of block-level element produced by the Markdown parser.</summary>
+    public enum MarkdownBlockType
+    {
+        Paragraph,
+        Heading,
+        CodeBlock,
+        BlockQuote,
+        ListItem,
+        ThematicBreak
+    }
+
+    /// <summary>Inline styling flags. A single inline can combine several flags.</summary>
+    [Flags]
+    public enum MarkdownInlineStyle
+    {
+        None = 0,
+        Bold = 1 << 0,
+        Italic = 1 << 1,
+        Code = 1 << 2,
+        Link = 1 << 3,
+        Strikethrough = 1 << 4
+    }
+
+    /// <summary>A run of inline text sharing the same style and link target.</summary>
+    public sealed class MarkdownInline
+    {
+        private readonly StringBuilder m_Text = new StringBuilder();
+
+        public MarkdownInline(string text, MarkdownInlineStyle style, string url = null)
+        {
+            m_Text.Append(text ?? string.Empty);
+            Style = style;
+            Url = url;
+        }
+
+        /// <summary>Visible text of the run. Escapes have already been resolved.</summary>
+        public string Text => m_Text.ToString();
+
+        public MarkdownInlineStyle Style { get; }
+
+        /// <summary>Destination of a link, or null when the run is not a link.</summary>
+        public string Url { get; }
+
+        public bool IsImage { get; internal set; }
+
+        internal void Append(string text)
+        {
+            m_Text.Append(text);
+        }
+    }
+
+    /// <summary>A block-level Markdown element.</summary>
+    public sealed class MarkdownBlock
+    {
+        public MarkdownBlock(MarkdownBlockType type)
+        {
+            Type = type;
+            Inlines = new List<MarkdownInline>();
+        }
+
+        public MarkdownBlockType Type { get; internal set; }
+
+        /// <summary>Heading level (1-6), or 0 for non-heading blocks.</summary>
+        public int Level { get; internal set; }
+
+        /// <summary>Number of enclosing block quotes.</summary>
+        public int QuoteDepth { get; internal set; }
+
+        /// <summary>Nesting level of a list item (0 for a top-level item).</summary>
+        public int ListDepth { get; internal set; }
+
+        /// <summary>True when this item belongs to an ordered list.</summary>
+        public bool IsOrderedList { get; internal set; }
+
+        /// <summary>Source number of an ordered list item, otherwise 0.</summary>
+        public int ListNumber { get; internal set; }
+
+        /// <summary>Language recorded after the opening fence of a code block.</summary>
+        public string Info { get; internal set; }
+
+        /// <summary>Literal source of a code block.</summary>
+        public string Code { get; internal set; }
+
+        public List<MarkdownInline> Inlines { get; }
+
+        public string PlainText
+        {
+            get
+            {
+                if (Type == MarkdownBlockType.CodeBlock)
+                    return Code ?? string.Empty;
+
+                var sb = new StringBuilder();
+                for (int i = 0; i < Inlines.Count; i++)
+                    sb.Append(Inlines[i].Text);
+                return sb.ToString();
+            }
+        }
+
+        public override string ToString()
+        {
+            if (Type == MarkdownBlockType.Heading)
+                return "Heading " + Level + ": " + PlainText;
+            if (Type == MarkdownBlockType.CodeBlock)
+                return "Code (" + (Info ?? string.Empty) + ")";
+            return Type + ": " + PlainText;
+        }
+    }
+
+    /// <summary>The immutable result of parsing a Markdown source string.</summary>
+    public sealed class MarkdownDocument
+    {
+        private readonly List<MarkdownBlock> m_Blocks;
+
+        internal MarkdownDocument(string source, List<MarkdownBlock> blocks)
+        {
+            Source = source ?? string.Empty;
+            m_Blocks = blocks ?? new List<MarkdownBlock>();
+        }
+
+        public string Source { get; }
+
+        public IReadOnlyList<MarkdownBlock> Blocks => m_Blocks;
+
+        public string PlainText
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                for (int i = 0; i < m_Blocks.Count; i++)
+                {
+                    if (i > 0) sb.Append('\n');
+                    sb.Append(m_Blocks[i].PlainText);
+                }
+                return sb.ToString();
+            }
+        }
+    }
+}

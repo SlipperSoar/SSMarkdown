@@ -1,0 +1,17 @@
+{
+  "name": "SSMarkdown.Demo",
+  "rootNamespace": "SSMarkdown.Demo",
+  "references": [
+    "SSMarkdown.Runtime",
+    "Unity.ugui"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
