@@ -4,6 +4,12 @@
 
 本仓库同时是一个可通过 **Unity Package Manager（UPM）** 导入的包，以及一个完全独立的演示工程。
 
+[![Unity 2022.3 LTS](https://img.shields.io/badge/Unity-2022.3%20LTS-000000?logo=unity&logoColor=white)](https://unity.com)
+[![UPM](https://img.shields.io/badge/UPM-com.ssmarkdown-2b6cb0)](https://github.com/SlipperSoar/SSMarkdown)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
+
+> 当前版本 **1.1.3**，核心渲染能力已经完成。后续计划见 [待办事项](#待办事项)。
+
 ![SSMarkdown demo](Documentation~/demo-preview.png)
 
 ## 包信息
@@ -28,7 +34,7 @@
 输入：
 
 ```text
-https://github.com/SlipperSoar/SSMarkdown.git#v1.1.2
+https://github.com/SlipperSoar/SSMarkdown.git#v1.1.3
 ```
 
 也可以直接写入项目的 `Packages/manifest.json`：
@@ -36,14 +42,14 @@ https://github.com/SlipperSoar/SSMarkdown.git#v1.1.2
 ```json
 {
   "dependencies": {
-    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.1.2"
+    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.1.3"
   }
 }
 ```
 
-把 `v1.1.2` 换成 `main` 可跟踪主分支最新提交。
+把 `v1.1.3` 换成 `main` 可跟踪主分支最新提交。
 
-> 仓库是 **Private** 的。Unity 通过系统 Git 拉取 Git URL，请先配置 GitHub 凭据（Git Credential Manager 或 SSH key）。如果当前机器没有可用凭据，使用下面的本地安装方式。
+> 仓库是公开的，Git URL 可以直接安装。如果当前网络无法访问 GitHub，可使用下面的本地安装方式，或在 Package Manager 中指定代理。
 
 ### 方式二：本地克隆后安装
 

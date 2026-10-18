@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [1.1.3] - 2026-10-18
+
+### Changed
+
+- Public repository documentation: removed private-repository installation notes, added status badges and refreshed the GitHub description/topics.
+
 ## [1.1.2] - 2026-10-18
 
 ### Fixed
