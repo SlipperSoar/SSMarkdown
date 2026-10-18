@@ -422,11 +422,21 @@ namespace SS.UIComponent
             Texture2D texture = Resources.Load<Texture2D>(path);
             if (texture == null && HasFileExtension(path))
                 texture = Resources.Load<Texture2D>(RemoveFileExtension(path));
+            if (texture == null)
+                texture = LoadResourceSprite(path);
+            if (texture == null && HasFileExtension(path))
+                texture = LoadResourceSprite(RemoveFileExtension(path));
 
             if (texture != null)
                 OnImageLoaded(entry, texture, false);
             else
                 OnImageError(entry, "Resources texture not found: " + path);
+        }
+
+        private static Texture2D LoadResourceSprite(string path)
+        {
+            Sprite sprite = Resources.Load<Sprite>(path);
+            return sprite != null ? sprite.texture : null;
         }
 
         private IEnumerator LoadWebTexture(string url, MarkdownImageEntry entry)
@@ -495,6 +505,12 @@ namespace SS.UIComponent
             else
             {
                 texture = bundle.LoadAsset<Texture2D>(assetName);
+                if (texture == null)
+                {
+                    Sprite sprite = bundle.LoadAsset<Sprite>(assetName);
+                    if (sprite != null)
+                        texture = sprite.texture;
+                }
             }
 
             if (texture == null)

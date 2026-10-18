@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [1.1.1] - 2026-10-18
+
+### Fixed
+
+- Fall back to `Sprite.texture` when a Resources or AssetBundle asset is imported as a sprite.
+- Ignore image load callbacks that arrive after the MarkdownText has been destroyed.
+
 ## [1.1.0] - 2026-10-18
 
 ### Added
