@@ -108,9 +108,11 @@ namespace SS.UIComponent.Tests
             Canvas.ForceUpdateCanvases();
             Assert.Greater(m_View.contentHeight, 0f);
             Assert.Greater(m_View.theme.backgroundColor.a, 0f);
+            Assert.Greater(m_View.color.grayscale, 0.5f, "Dark theme should switch body text to a light color.");
 
             m_View.UseLightTheme();
             Assert.AreEqual(0f, m_View.theme.backgroundColor.a, 0.001f);
+            Assert.Less(m_View.color.grayscale, 0.5f, "Light theme should switch body text to a dark color.");
         }
 
         [Test]

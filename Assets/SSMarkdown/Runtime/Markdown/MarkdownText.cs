@@ -207,7 +207,11 @@ namespace SS.UIComponent
         {
             if (value == null)
                 return;
+
+            Color body = value.bodyColor;
+            body.a *= color.a;
             theme.CopyFrom(value);
+            color = body;
             MarkDirty();
         }
 

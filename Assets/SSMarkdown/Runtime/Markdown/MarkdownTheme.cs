@@ -15,7 +15,9 @@ namespace SS.UIComponent
         [Tooltip("Optional page fill drawn behind the document. Use alpha 0 for a transparent MarkdownText.")]
         public Color backgroundColor = new Color(0f, 0f, 0f, 0f);
 
-        [Header("Inline Colors")]
+        [Header("Text Colors")]
+        [Tooltip("Body and list text color applied by ApplyTheme, UseLightTheme and UseDarkTheme. MarkdownText.color remains the source of truth at runtime.")]
+        public Color bodyColor = new Color32(36, 41, 47, 255);
         public Color headingColor = new Color32(13, 20, 30, 255);
         public Color linkColor = new Color32(9, 105, 218, 255);
         public Color linkUnderlineColor = new Color32(9, 105, 218, 150);
@@ -70,6 +72,7 @@ namespace SS.UIComponent
             var theme = new MarkdownTheme
             {
                 backgroundColor = new Color32(13, 17, 23, 255),
+                bodyColor = new Color32(230, 237, 243, 255),
                 headingColor = new Color32(240, 246, 252, 255),
                 linkColor = new Color32(88, 166, 255, 255),
                 linkUnderlineColor = new Color32(88, 166, 255, 150),
@@ -94,6 +97,7 @@ namespace SS.UIComponent
                 return;
 
             backgroundColor = other.backgroundColor;
+            bodyColor = other.bodyColor;
             headingColor = other.headingColor;
             linkColor = other.linkColor;
             linkUnderlineColor = other.linkUnderlineColor;

@@ -52,6 +52,9 @@ namespace SS.UIComponent.Editor
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(m_Theme, new GUIContent("Style"), true);
+                EditorGUILayout.HelpBox(
+                    "MarkdownText.color is the body/list color. The Light/Dark buttons and ApplyTheme also apply theme.bodyColor to it.",
+                    MessageType.None);
                 EditorGUI.indentLevel--;
 
                 using (new EditorGUILayout.HorizontalScope())
