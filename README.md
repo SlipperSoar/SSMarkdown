@@ -1,33 +1,71 @@
 # SSMarkdown
 
-**基于 Unity UGUI 的运行时 Markdown 渲染组件。** 像使用 `UnityEngine.UI.Text` 一样赋值，即可在 Canvas 中显示 headings、段落、强调、链接、列表、引用和代码块。
+**基于 Unity UGUI 的运行时 Markdown 渲染组件。** 像使用 `UnityEngine.UI.Text` 一样赋值，即可在 Canvas 中显示标题、段落、强调、链接、列表、引用和代码块。
 
-![SSMarkdown demo](Docs/demo-preview.png)
+本仓库同时是一个可通过 **Unity Package Manager（UPM）** 导入的包，以及一个完全独立的演示工程。
 
-## 特性
+![SSMarkdown demo](Documentation~/demo-preview.png)
 
-- **纯 UGUI 实现**：组件 `MarkdownText` 继承 `MaskableGraphic`，自带 `ILayoutElement`、点击命中和 Maskable 支持，不依赖 TextMeshPro 或第三方库。
-- **运行时赋值**：`text` 属性、`SetMarkdown(string)`、`SetMarkdown(TextAsset)` 三种方式。
-- **文档级排版**：按块级元素独立排版，支持标题层级、段落间距、嵌套列表、引用缩进、代码块背景和分隔线。
-- **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
-- **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
-- **主题**：内置 Light / Dark 两套配色，可复制、修改 `MarkdownTheme`；切换主题时正文、标题、引用与底板一起更新，避免浅色父级下白字看不清。
-- **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
-- **纯 C# 解析器**：解析器不依赖 UnityEngine，可单独在 .NET 中测试。
-- **编辑器工具**：`GameObject/UI/Markdown Text` 菜单、自定义 Inspector、一键重建演示场景。
+## 包信息
 
-## 环境
+| 项目 | 值 |
+| --- | --- |
+| Package name | `com.ssmarkdown` |
+| 运行时命名空间 | `SS.UIComponent` |
+| 组件 | `MarkdownText : MaskableGraphic` |
+| 最低 Unity 版本 | 2022.3 LTS |
+| UGUI | `com.unity.ugui` 1.0.0 |
+| 许可证 | MIT |
 
-- Unity **2022.3 LTS**（仓库使用 `2022.3.62f3c1` 验证）
-- Unity UI (`com.unity.ugui`) 1.0.0
-- Unity Test Framework 1.1.33（仅测试需要）
+## 通过 UPM 安装
 
-## 快速开始
+### 方式一：Git URL（推荐）
 
-1. 用 Unity Hub 打开本仓库根目录。
-2. 打开演示场景：`Assets/SSMarkdown/Demo/Scenes/MarkdownDemo.unity`。
-3. 或在编辑器中点击 **GameObject > UI > Markdown Text** 创建组件。
-4. 在 Inspector 的 **Markdown** 文本框中输入内容，或按下面的方式在代码中赋值。
+在 Unity 中打开：
+
+**Window > Package Manager > + > Add package from git URL...**
+
+输入：
+
+```text
+https://github.com/SlipperSoar/SSMarkdown.git#v1.0.0
+```
+
+也可以直接写入项目的 `Packages/manifest.json`：
+
+```json
+{
+  "dependencies": {
+    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.0.0"
+  }
+}
+```
+
+把 `v1.0.0` 换成 `main` 可跟踪主分支最新提交。
+
+> 仓库是 **Private** 的。Unity 通过系统 Git 拉取 Git URL，请先配置 GitHub 凭据（Git Credential Manager 或 SSH key）。如果当前机器没有可用凭据，使用下面的本地安装方式。
+
+### 方式二：本地克隆后安装
+
+```powershell
+git clone https://github.com/SlipperSoar/SSMarkdown.git
+```
+
+然后在 Package Manager 中点击 **+ > Add package from disk...**，选择仓库根目录的 `package.json`。或在目标项目的 `Packages/manifest.json` 中写相对路径：
+
+```json
+{
+  "dependencies": {
+    "com.ssmarkdown": "file:../../SSMarkdown"
+  }
+}
+```
+
+`file:` 路径相对于目标工程的 `Packages` 目录（不是工程根目录），请按实际克隆位置调整；如果包直接放在工程的 `Packages/com.ssmarkdown` 下，则写 `file:com.ssmarkdown`。
+
+### 安装后验证
+
+包安装成功后，Package Manager 的 **In Project** 中会出现 **SSMarkdown**，并且可以这样引用：
 
 ```csharp
 using SS.UIComponent;
@@ -40,31 +78,59 @@ public sealed class ReadmePanel : MonoBehaviour
     private void Start()
     {
         m_View.text = "# Hello\n\nThis is **Markdown** with a [link](https://example.com).";
-    }
-
-    public void ShowDocument(TextAsset asset)
-    {
-        m_View.SetMarkdown(asset);
-    }
-}
-```
-
-监听链接点击：
-
-```csharp
-using SS.UIComponent;
-using UnityEngine;
-
-public sealed class LinkExample : MonoBehaviour
-{
-    [SerializeField] private MarkdownText m_View;
-
-    private void Start()
-    {
         m_View.onLinkClicked.AddListener(url => Debug.Log("Clicked: " + url));
     }
 }
 ```
+
+也可以在编辑器中点击 **GameObject > UI > Markdown Text** 创建组件。
+
+## 独立演示工程
+
+演示部分已从包中移出，位于：
+
+```text
+Demo~/
+```
+
+`Demo~` 是一个完整的 Unity 工程，使用 `file:../..` 引用仓库根目录的 UPM 包，不参与包导入。
+
+打开方式：
+
+1. Unity Hub 选择 **Add project from disk**。
+2. 选择仓库下的 `Demo~` 目录（目录名末尾的 `~` 是 UPM 排除标记，在文件系统中仍是普通目录）。
+3. 使用 Unity 2022.3 打开。
+4. 打开场景 `Assets/SSMarkdownDemo/Scenes/MarkdownDemo.unity`。
+5. 运行后可以切换 Overview / Syntax、Light / Dark、字号，并点击链接查看 `onLinkClicked`。
+
+包本身不包含演示场景，因此导入到其他项目时不会引入 Demo 的脚本或资源。
+
+## 待办事项
+
+- [ ] GFM 表格解析与列宽排版
+- [ ] 引用式链接（reference-style links）与脚注
+- [ ] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
+- [ ] 图片渲染：内置 Sprite 引用与异步 URL 图片加载
+- [ ] 代码块语言标签与可选的语法高亮接口
+- [ ] 文本选择与复制
+- [ ] 链接 hover 光标、hover 高亮和键盘导航
+- [ ] 中日韩字体的自动回退与更精确的断行规则
+- [ ] PlayMode 测试、布局性能基准和大量文档的虚拟化
+- [ ] 基于 Unity License 的 CI 导入/编译/测试流水线
+
+欢迎通过 Issue 或 PR 补充优先级。
+
+## 特性
+
+- **纯 UGUI 实现**：组件 `MarkdownText` 继承 `MaskableGraphic`，自带 `ILayoutElement`、点击命中和 Maskable 支持，不依赖 TextMeshPro 或第三方库。
+- **运行时赋值**：`text` 属性、`SetMarkdown(string)`、`SetMarkdown(TextAsset)` 三种方式。
+- **文档级排版**：按块级元素独立排版，支持标题层级、段落间距、嵌套列表、引用缩进、代码块背景和分隔线。
+- **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
+- **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
+- **主题**：内置 Light / Dark 两套配色，切换主题时正文、标题、引用与底板一起更新。
+- **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
+- **纯 C# 解析器**：解析器不依赖 UnityEngine，可单独在 .NET 中测试。
+- **编辑器工具**：`GameObject/UI/Markdown Text` 菜单、自定义 Inspector。
 
 ## 组件 API
 
@@ -77,19 +143,25 @@ public sealed class LinkExample : MonoBehaviour
 | `int fontSize` | 正文字号，标题按主题缩放。 |
 | `TextAnchor alignment` | 水平对齐 + 整篇文档的垂直对齐。 |
 | `Vector4 padding` | 左、上、右、下内边距。 |
-| `MarkdownTheme theme` | 颜色、间距、标题比例等。 |
+| `MarkdownTheme theme` | 颜色、背景、间距、标题比例等。 |
 | `bool enableLinks` | 是否启用链接命中与事件。 |
 | `MarkdownLinkEvent onLinkClicked` | 链接点击事件，参数为 URL。 |
 | `MarkdownDocument document` | 当前解析结果，可读取 blocks。 |
 | `float contentHeight` | 当前宽度下的文档高度。 |
+| `void ApplyTheme(MarkdownTheme)` | 应用主题，并同步 `theme.bodyColor` 到 `color`。 |
+| `UseLightTheme()` / `UseDarkTheme()` | 应用内置主题。 |
 | `void Refresh()` | 强制重新解析和排版。 |
 | `bool TryGetLinkAtLocalPosition(...)` | 本地坐标链接命中，便于实现悬浮效果。 |
 
-`MarkdownTheme` 提供 `CreateLight()`、`CreateDark()`、`CopyFrom()`，组件本身也提供 `UseLightTheme()` / `UseDarkTheme()`。
+`MarkdownText.color` 仍然是正文和列表颜色的最终来源。`ApplyTheme()` / `UseLightTheme()` / `UseDarkTheme()` 会应用 `MarkdownTheme.bodyColor`；如果只手动修改主题里的单个字段，需要自行同步 `color` 并调用 `Refresh()`。
 
-Dark 主题自带不透明深色 `backgroundColor`，因此即使 `MarkdownText` 所在的父级仍是浅色，切换后标题、引用和正文也有足够的对比度。将 `theme.backgroundColor` 的 alpha 调为 `0` 可以恢复透明底板；Light 主题默认透明。
+## 主题与对比度
 
-`UseDarkTheme()` / `UseLightTheme()` / `ApplyTheme()` 还会把 `theme.bodyColor` 应用到 `MarkdownText.color`，因此正文、列表和列表标记会一起切换。`MarkdownText.color` 仍然是运行时正文颜色的最终来源；如果只手动修改主题里的单个颜色字段，需要自行同步 `color`。
+`MarkdownTheme` 提供 `CreateLight()`、`CreateDark()`、`CopyFrom()`。
+
+Dark 主题内置不透明深色 `backgroundColor` 和浅色 `bodyColor`，因此即使 `MarkdownText` 的父级背景仍是浅色，切换后标题、正文、列表和引用也都有足够对比度。将 `theme.backgroundColor` 的 alpha 调为 `0` 可以恢复透明底板；Light 主题默认透明。
+
+演示工程会额外切换整页背景；包组件只负责自己的文档矩形。
 
 ## 布局建议
 
@@ -104,19 +176,17 @@ Dark 主题自带不透明深色 `backgroundColor`，因此即使 `MarkdownText`
 
 ### 放在 ScrollRect 中
 
-演示场景就是完整示例：
-
-```
+```text
 Scroll View (ScrollRect)
 └─ Viewport (RectMask2D)
    └─ Markdown Content (MarkdownText + ContentSizeFitter)
 ```
 
-组件会在同一个父节点下自动创建一个隐藏的装饰层，用于绘制代码块背景、引用条、链接下划线和分隔线。该层会同步 RectTransform 并跟随滚动，不需要手动创建或删除。
+组件会在同一个父节点下自动创建一个隐藏的装饰层，用于绘制底板、代码块背景、引用条、链接下划线和分隔线。该层会同步 RectTransform 并跟随滚动。
 
 ### 中文字体
 
-Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时，请导入一个覆盖所需字符的 TTF/OTF 并赋给 `font`。组件本身不绑定任何字体资源。
+Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时，请导入一个覆盖所需字符的 TTF/OTF 并赋给 `font`。
 
 ## Markdown 支持范围
 
@@ -142,7 +212,7 @@ Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时
 - `&amp;`、`&lt;`、`&#x...;` 等常见实体
 - 反斜杠转义
 
-**有意不支持**
+**有意不支持（见待办）**
 
 - 表格、脚注、引用式链接、任务列表
 - 语法高亮
@@ -151,22 +221,24 @@ Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时
 
 解析器对未知结构采取“退化为普通文本”的策略，不会在运行时抛异常。
 
-## 实现结构
+## 仓库结构
 
-```
-Assets/SSMarkdown/
-├─ Runtime/
-│  ├─ MarkdownText.cs            # UGUI Graphic、排版、网格、链接命中
-│  ├─ MarkdownTheme.cs           # 序列化主题
+```text
+.
+├─ package.json                 # UPM package manifest
+├─ Runtime/                     # 运行时程序集 SSMarkdown.Runtime
 │  └─ Markdown/
-│     ├─ MarkdownParser.cs       # 块级解析
-│     ├─ MarkdownInlineParser.cs # 行内解析
-│     ├─ MarkdownModel.cs        # Block / Inline / Document
-│     ├─ MarkdownRichText.cs     # 富文本标记与 span 映射
-│     └─ MarkdownDecorationLayer.cs
-├─ Editor/                       # Inspector、菜单、场景生成器
-├─ Demo/                         # 示例场景、控制器、Markdown 文档
-└─ Tests/EditMode/               # Unity Test Framework 测试
+├─ Editor/                      # 编辑器程序集 SSMarkdown.Editor
+├─ Tests/                       # Unity EditMode 测试（testables）
+├─ Demo~/                       # 独立 Unity 演示工程，不参与包导入
+│  ├─ Assets/SSMarkdownDemo/
+│  ├─ Packages/manifest.json    # com.ssmarkdown: file:../..
+│  └─ ProjectSettings/
+├─ Tools~/ParserTests/          # 无 Unity 依赖的解析器测试
+├─ Documentation~/              # 截图
+├─ README.md
+├─ CHANGELOG.md
+└─ LICENSE.md
 ```
 
 渲染分为两层：
@@ -181,26 +253,35 @@ Assets/SSMarkdown/
 纯 C# 解析器测试：
 
 ```powershell
-dotnet run --project Tools/ParserTests/ParserTests.csproj -c Release
+dotnet run --project Tools~/ParserTests/ParserTests.csproj -c Release
 ```
 
-Unity EditMode 测试（13 项）：
+Unity EditMode 测试通过 `Demo~` 工程运行（manifest 中已配置 `"testables": ["com.ssmarkdown"]`）：
+
+1. 用 Unity 打开 `Demo~`。
+2. **Window > General > Test Runner > EditMode > Run All**。
+
+命令行方式：
 
 ```powershell
 & "C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1\Editor\Unity.exe" `
-  -batchmode -nographics -projectPath . `
+  -batchmode -nographics -projectPath ".\Demo~" `
   -runTests -testPlatform EditMode `
   -testResults TestResults.xml
 ```
 
-测试覆盖解析、样式、列表、引用、代码块尖括号、链接命中、主题切换和空文档高度。
+当前测试覆盖解析、样式、列表、引用、代码块尖括号、链接命中、主题切换和空文档高度。
 
 ## 截图
 
 | Light | Dark |
 | --- | --- |
-| ![Light](Docs/preview-light.png) | ![Dark](Docs/preview-dark.png) |
+| ![Light](Documentation~/preview-light.png) | ![Dark](Documentation~/preview-dark.png) |
+
+## 版本
+
+见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE.md)

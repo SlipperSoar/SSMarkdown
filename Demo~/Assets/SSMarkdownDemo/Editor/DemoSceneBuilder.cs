@@ -14,14 +14,14 @@ namespace SSMarkdown.Demo.Editor
     /// <summary>Creates the showcase scene so the repository has no hand-authored scene YAML drift.</summary>
     public static class DemoSceneBuilder
     {
-        public const string ScenePath = "Assets/SSMarkdown/Demo/Scenes/MarkdownDemo.unity";
-        private const string OverviewPath = "Assets/SSMarkdown/Demo/Markdown/Overview.md";
-        private const string SyntaxPath = "Assets/SSMarkdown/Demo/Markdown/Syntax.md";
+        public const string ScenePath = "Assets/SSMarkdownDemo/Scenes/MarkdownDemo.unity";
+        private const string OverviewPath = "Assets/SSMarkdownDemo/Markdown/Overview.md";
+        private const string SyntaxPath = "Assets/SSMarkdownDemo/Markdown/Syntax.md";
 
         [MenuItem("SSMarkdown/Rebuild Demo Scene")]
         public static void Build()
         {
-            Directory.CreateDirectory("Assets/SSMarkdown/Demo/Scenes");
+            Directory.CreateDirectory("Assets/SSMarkdownDemo/Scenes");
             AssetDatabase.Refresh();
 
             TextAsset overview = AssetDatabase.LoadAssetAtPath<TextAsset>(OverviewPath);

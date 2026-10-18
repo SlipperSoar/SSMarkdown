@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [1.0.0] - 2026-10-18
 
+### Changed
+
+- Repository root is now a UPM package (`com.ssmarkdown`), with `Runtime`, `Editor` and `Tests` at the top level.
+- The demo is a standalone Unity project under `Demo~/` and references the package through `file:../..`.
+- Added Git URL and local installation instructions to the README.
+
 ### Added
 
 - Runtime UGUI `MarkdownText` component with `text`, `SetMarkdown(string)` and `SetMarkdown(TextAsset)` APIs.

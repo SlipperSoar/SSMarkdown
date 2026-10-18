@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/SSMarkdown/Demo/Scenes/MarkdownDemo.unity
+    path: Assets/SSMarkdownDemo/Scenes/MarkdownDemo.unity
     guid: db593d703dee7964197682e95c4daa14
   m_configObjects: {}

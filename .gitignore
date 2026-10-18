@@ -45,9 +45,9 @@ desktop.ini
 # Test / tool output
 TestResults.xml
 LinkResults.xml
-[Dd]ocs/*.tmp
-[Tt]ools/**/bin/
-[Tt]ools/**/obj/
+[Dd]ocumentation~/*.tmp
+[Tt]ools~/**/bin/
+[Tt]ools~/**/obj/
 *.log
 
 # Builds and packages
@@ -57,10 +57,19 @@ LinkResults.xml
 *.app
 
 # Keep the standalone parser test project
-!Tools/ParserTests/ParserTests.csproj
+!Tools~/ParserTests/ParserTests.csproj
 
 # Machine-specific package manager settings
-ProjectSettings/PackageManagerSettings.asset
+**/ProjectSettings/PackageManagerSettings.asset
 
 # Let each Unity installation resolve against its own registry
-Packages/packages-lock.json
+**/Packages/packages-lock.json
+
+# Unity may create meta files for package-root docs/tooling when the package is
+# referenced through a local file: dependency. Only the code folders need metas.
+/*.meta
+!/Runtime.meta
+!/Editor.meta
+!/Tests.meta
+/Documentation~/*.meta
+/Tools~/**/*.meta

@@ -3,7 +3,6 @@
   "rootNamespace": "SS.UIComponent.Editor",
   "references": [
     "SSMarkdown.Runtime",
-    "SSMarkdown.Demo",
     "Unity.ugui",
     "UnityEditor.UI"
   ],
