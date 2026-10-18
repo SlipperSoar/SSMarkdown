@@ -18,6 +18,7 @@ namespace SS.UIComponent
     /// headings, paragraphs, emphasis, links, lists, quotes and code blocks.
     /// </summary>
     [AddComponentMenu("UI/Markdown Text", 12)]
+    [DefaultExecutionOrder(1000)]
     public sealed class MarkdownText : MaskableGraphic, ILayoutElement, IPointerClickHandler
     {
         [SerializeField, TextArea(4, 24)] private string m_Text = string.Empty;
