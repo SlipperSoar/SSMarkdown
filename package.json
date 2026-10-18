@@ -1,8 +1,8 @@
 {
   "name": "com.ssmarkdown",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "SSMarkdown",
-  "description": "Runtime Markdown rendering for Unity UGUI. A Text-like MarkdownText component with headings, lists, quotes, links and themed code blocks.",
+  "description": "Runtime Markdown rendering for Unity UGUI. A Text-like MarkdownText component with headings, tables, images, lists, quotes, links and themed code blocks.",
   "unity": "2022.3",
   "license": "MIT",
   "author": {
@@ -23,3 +23,4 @@
   "changelogUrl": "https://github.com/SlipperSoar/SSMarkdown/blob/main/CHANGELOG.md",
   "licensesUrl": "https://github.com/SlipperSoar/SSMarkdown/blob/main/LICENSE.md"
 }
+

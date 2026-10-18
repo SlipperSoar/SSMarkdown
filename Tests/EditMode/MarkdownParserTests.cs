@@ -100,5 +100,18 @@ namespace SS.UIComponent.Tests
             Assert.AreEqual("a | b", table.Rows[1][0].PlainText);
             Assert.AreEqual("x|y", table.Rows[1][1].PlainText);
         }
+
+        [Test]
+        public void Parses_images_as_blocks()
+        {
+            MarkdownDocument document = MarkdownParser.ParseText(
+                "Before ![logo](resources://SSMarkdownLogo) after");
+            Assert.AreEqual(3, document.Blocks.Count);
+            Assert.AreEqual("Before", document.Blocks[0].PlainText);
+            Assert.AreEqual(MarkdownBlockType.Image, document.Blocks[1].Type);
+            Assert.AreEqual("logo", document.Blocks[1].ImageAlt);
+            Assert.AreEqual("resources://SSMarkdownLogo", document.Blocks[1].ImageUrl);
+            Assert.AreEqual("after", document.Blocks[2].PlainText);
+        }
     }
 }

@@ -18,6 +18,8 @@ namespace SS.UIComponent.Editor
         private SerializedProperty m_Theme;
         private SerializedProperty m_EnableLinks;
         private SerializedProperty m_OnLinkClicked;
+        private SerializedProperty m_MaxImageWidth;
+        private SerializedProperty m_MaxImageHeight;
         private bool m_ShowTheme = true;
 
         protected override void OnEnable()
@@ -31,6 +33,8 @@ namespace SS.UIComponent.Editor
             m_Theme = serializedObject.FindProperty("m_Theme");
             m_EnableLinks = serializedObject.FindProperty("m_EnableLinks");
             m_OnLinkClicked = serializedObject.FindProperty("m_OnLinkClicked");
+            m_MaxImageWidth = serializedObject.FindProperty("m_MaxImageWidth");
+            m_MaxImageHeight = serializedObject.FindProperty("m_MaxImageHeight");
         }
 
         public override void OnInspectorGUI()
@@ -67,6 +71,14 @@ namespace SS.UIComponent.Editor
                         RefreshTargets();
                 }
             }
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Images", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_MaxImageWidth, new GUIContent("Max Width", "0 uses the available content width."));
+            EditorGUILayout.PropertyField(m_MaxImageHeight, new GUIContent("Max Height", "0 means unlimited."));
+            EditorGUILayout.HelpBox(
+                "URL supports http(s), Resources paths (or resources://) and ab://bundle#AssetName. Use imageLoader for a custom AssetBundle manager.",
+                MessageType.None);
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Links", EditorStyles.boldLabel);

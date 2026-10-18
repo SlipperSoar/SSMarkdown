@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using SS.UIComponent;
 using UnityEngine;
@@ -124,6 +125,42 @@ namespace SS.UIComponent.Tests
             MarkdownBlock block = m_View.document.Blocks[0];
             Assert.AreEqual(MarkdownBlockType.Table, block.Type);
             Assert.AreEqual(2, block.Table.ColumnCount);
+            Assert.Greater(m_View.contentHeight, 0f);
+
+            Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();
+            Assert.IsNotNull(mesh);
+            Assert.Greater(mesh.vertexCount, 0);
+        }
+
+        [Test]
+        public void Renders_images_with_a_custom_loader()
+        {
+            var texture = new Texture2D(64, 32, TextureFormat.RGBA32, false);
+            texture.name = "SSMarkdownTestImage";
+            m_View.imageLoader = (url, onLoaded, onError) => onLoaded(texture);
+            m_View.text = "Before\n\n![logo](test://logo)\n\nAfter";
+            Canvas.ForceUpdateCanvases();
+            m_View.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
+
+            MarkdownBlock image = System.Array.Find(m_View.document.Blocks.ToArray(), b => b.Type == MarkdownBlockType.Image);
+            Assert.IsNotNull(image);
+            Assert.AreEqual("logo", image.ImageAlt);
+
+            RawImage raw = m_View.GetComponentInChildren<RawImage>(true);
+            Assert.IsNotNull(raw);
+            Assert.AreSame(texture, raw.texture);
+
+            Object.DestroyImmediate(texture);
+        }
+
+        [Test]
+        public void Failed_images_show_a_fallback()
+        {
+            m_View.imageLoader = (url, onLoaded, onError) => onError("not found");
+            m_View.text = "![missing](test://missing)";
+            Canvas.ForceUpdateCanvases();
+
+            Assert.AreEqual(MarkdownBlockType.Image, m_View.document.Blocks[0].Type);
             Assert.Greater(m_View.contentHeight, 0f);
 
             Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();

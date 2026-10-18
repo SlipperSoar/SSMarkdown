@@ -40,6 +40,13 @@ namespace SS.UIComponent
         public Color tableRowBackgroundColor = new Color32(175, 184, 193, 18);
         public Color tableHeaderTextColor = new Color32(13, 20, 30, 255);
 
+        [Header("Images")]
+        public Color imageBackgroundColor = new Color32(175, 184, 193, 30);
+        public Color imageBorderColor = new Color32(175, 184, 193, 130);
+        public Color imageLoadingTextColor = new Color32(87, 96, 106, 255);
+        public Color imageErrorColor = new Color32(207, 34, 46, 255);
+        public Color imageErrorBackgroundColor = new Color32(207, 34, 46, 22);
+
         [Header("Metrics")]
         [Min(0.5f)] public float lineSpacing = 1.18f;
         [Min(0f)] public float paragraphSpacing = 10f;
@@ -53,6 +60,8 @@ namespace SS.UIComponent
         [Min(0f)] public float codePadding = 10f;
         [Min(0f)] public float codeBlockSpacing = 10f;
         [Min(0f)] public float tableSpacing = 12f;
+        [Min(0f)] public float imageSpacing = 10f;
+        [Min(0f)] public float imagePadding = 8f;
         [Min(0f)] public float tableCellPadding = 8f;
         [Min(1f)] public float tableBorderThickness = 1f;
         [Min(16f)] public float tableMinColumnWidth = 48f;
@@ -99,7 +108,12 @@ namespace SS.UIComponent
                 tableBorderColor = new Color32(110, 118, 129, 150),
                 tableHeaderBackgroundColor = new Color32(110, 118, 129, 55),
                 tableRowBackgroundColor = new Color32(110, 118, 129, 20),
-                tableHeaderTextColor = new Color32(240, 246, 252, 255)
+                tableHeaderTextColor = new Color32(240, 246, 252, 255),
+                imageBackgroundColor = new Color32(110, 118, 129, 45),
+                imageBorderColor = new Color32(110, 118, 129, 130),
+                imageLoadingTextColor = new Color32(139, 148, 158, 255),
+                imageErrorColor = new Color32(255, 123, 114, 255),
+                imageErrorBackgroundColor = new Color32(248, 81, 73, 35)
             };
             return theme;
         }
@@ -129,6 +143,11 @@ namespace SS.UIComponent
             tableHeaderBackgroundColor = other.tableHeaderBackgroundColor;
             tableRowBackgroundColor = other.tableRowBackgroundColor;
             tableHeaderTextColor = other.tableHeaderTextColor;
+            imageBackgroundColor = other.imageBackgroundColor;
+            imageBorderColor = other.imageBorderColor;
+            imageLoadingTextColor = other.imageLoadingTextColor;
+            imageErrorColor = other.imageErrorColor;
+            imageErrorBackgroundColor = other.imageErrorBackgroundColor;
 
             lineSpacing = other.lineSpacing;
             paragraphSpacing = other.paragraphSpacing;
@@ -145,6 +164,8 @@ namespace SS.UIComponent
             tableCellPadding = other.tableCellPadding;
             tableBorderThickness = other.tableBorderThickness;
             tableMinColumnWidth = other.tableMinColumnWidth;
+            imageSpacing = other.imageSpacing;
+            imagePadding = other.imagePadding;
             ruleSpacing = other.ruleSpacing;
             ruleThickness = other.ruleThickness;
             bulletSize = other.bulletSize;
@@ -184,6 +205,8 @@ namespace SS.UIComponent
             tableCellPadding = Mathf.Max(0f, tableCellPadding);
             tableBorderThickness = Mathf.Max(1f, tableBorderThickness);
             tableMinColumnWidth = Mathf.Max(16f, tableMinColumnWidth);
+            imageSpacing = Mathf.Max(0f, imageSpacing);
+            imagePadding = Mathf.Max(0f, imagePadding);
             ruleSpacing = Mathf.Max(0f, ruleSpacing);
             ruleThickness = Mathf.Max(1f, ruleThickness);
             bulletSize = Mathf.Max(1f, bulletSize);

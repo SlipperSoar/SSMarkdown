@@ -15,6 +15,8 @@ It does not depend on TextMeshPro or any third-party package.
 > The component handles the common documentation subset of Markdown.
 > Unsupported constructs simply fall back to readable plain text.
 
+![SSMarkdown](SSMarkdownLogo)
+
 ## At a glance
 
 | Element | Status | Notes |

@@ -550,13 +550,94 @@ namespace SS.UIComponent
 
             string text = JoinParagraphLines(paragraph);
             if (!string.IsNullOrWhiteSpace(text))
-            {
-                var block = NewBlock(MarkdownBlockType.Paragraph, quoteDepth);
-                AddInlines(block, text);
-                output.Add(block);
-            }
+                AddParagraphBlocks(text, quoteDepth, output);
 
             return i;
+        }
+
+        private static void AddParagraphBlocks(string text, int quoteDepth, List<MarkdownBlock> output)
+        {
+            List<MarkdownInline> inlines = MarkdownInlineParser.Parse(text);
+            var textRun = new List<MarkdownInline>();
+
+            int index = 0;
+            while (index < inlines.Count)
+            {
+                MarkdownInline inline = inlines[index];
+                if (!inline.IsImage || string.IsNullOrEmpty(inline.Url))
+                {
+                    textRun.Add(inline);
+                    index++;
+                    continue;
+                }
+
+                FlushTextRun(textRun, quoteDepth, output);
+
+                string url = inline.Url;
+                var alt = new StringBuilder();
+                while (index < inlines.Count &&
+                       inlines[index].IsImage &&
+                       string.Equals(inlines[index].Url, url, StringComparison.Ordinal))
+                {
+                    alt.Append(inlines[index].Text);
+                    index++;
+                }
+
+                var image = NewBlock(MarkdownBlockType.Image, quoteDepth);
+                image.ImageUrl = url;
+                image.ImageAlt = alt.ToString();
+                output.Add(image);
+            }
+
+            FlushTextRun(textRun, quoteDepth, output);
+        }
+
+        private static void FlushTextRun(List<MarkdownInline> textRun, int quoteDepth, List<MarkdownBlock> output)
+        {
+            if (textRun.Count == 0)
+                return;
+
+            int first = 0;
+            while (first < textRun.Count && textRun[first].Text.Length == 0)
+                first++;
+            int last = textRun.Count - 1;
+            while (last >= first && textRun[last].Text.Length == 0)
+                last--;
+
+            if (first > last)
+            {
+                textRun.Clear();
+                return;
+            }
+
+            if (first == last)
+            {
+                textRun[first] = Trimmed(textRun[first], true, true);
+            }
+            else
+            {
+                textRun[first] = Trimmed(textRun[first], true, false);
+                textRun[last] = Trimmed(textRun[last], false, true);
+            }
+
+            var block = NewBlock(MarkdownBlockType.Paragraph, quoteDepth);
+            for (int i = 0; i < textRun.Count; i++)
+                block.Inlines.Add(textRun[i]);
+            textRun.Clear();
+
+            if (!string.IsNullOrWhiteSpace(block.PlainText))
+                output.Add(block);
+        }
+
+        private static MarkdownInline Trimmed(MarkdownInline inline, bool trimStart, bool trimEnd)
+        {
+            string text = inline.Text;
+            string trimmed = trimStart ? text.TrimStart() : text;
+            if (trimEnd)
+                trimmed = trimmed.TrimEnd();
+            if (string.Equals(text, trimmed, StringComparison.Ordinal))
+                return inline;
+            return new MarkdownInline(trimmed, inline.Style, inline.Url);
         }
 
         private static MarkdownBlock NewBlock(MarkdownBlockType type, int quoteDepth)

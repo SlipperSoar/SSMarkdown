@@ -13,7 +13,8 @@ namespace SS.UIComponent
         BlockQuote,
         ListItem,
         ThematicBreak,
-        Table
+        Table,
+        Image
     }
 
     /// <summary>Inline styling flags. A single inline can combine several flags.</summary>
@@ -151,6 +152,12 @@ namespace SS.UIComponent
         /// <summary>Parsed data when <see cref="Type"/> is <see cref="MarkdownBlockType.Table"/>.</summary>
         public MarkdownTable Table { get; internal set; }
 
+        /// <summary>Image source when <see cref="Type"/> is <see cref="MarkdownBlockType.Image"/>.</summary>
+        public string ImageUrl { get; internal set; }
+
+        /// <summary>Alt text for an image block.</summary>
+        public string ImageAlt { get; internal set; }
+
         public List<MarkdownInline> Inlines { get; }
 
         public string PlainText
@@ -161,6 +168,8 @@ namespace SS.UIComponent
                     return Code ?? string.Empty;
                 if (Type == MarkdownBlockType.Table)
                     return Table != null ? Table.PlainText : string.Empty;
+                if (Type == MarkdownBlockType.Image)
+                    return ImageAlt ?? string.Empty;
 
                 var sb = new StringBuilder();
                 for (int i = 0; i < Inlines.Count; i++)
@@ -175,6 +184,8 @@ namespace SS.UIComponent
                 return "Heading " + Level + ": " + PlainText;
             if (Type == MarkdownBlockType.CodeBlock)
                 return "Code (" + (Info ?? string.Empty) + ")";
+            if (Type == MarkdownBlockType.Image)
+                return "Image: " + (ImageUrl ?? string.Empty);
             return Type + ": " + PlainText;
         }
     }

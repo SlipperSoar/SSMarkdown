@@ -28,7 +28,7 @@
 输入：
 
 ```text
-https://github.com/SlipperSoar/SSMarkdown.git#v1.0.0
+https://github.com/SlipperSoar/SSMarkdown.git#v1.1.0
 ```
 
 也可以直接写入项目的 `Packages/manifest.json`：
@@ -36,12 +36,12 @@ https://github.com/SlipperSoar/SSMarkdown.git#v1.0.0
 ```json
 {
   "dependencies": {
-    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.0.0"
+    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.1.0"
   }
 }
 ```
 
-把 `v1.0.0` 换成 `main` 可跟踪主分支最新提交。
+把 `v1.1.0` 换成 `main` 可跟踪主分支最新提交。
 
 > 仓库是 **Private** 的。Unity 通过系统 Git 拉取 Git URL，请先配置 GitHub 凭据（Git Credential Manager 或 SSH key）。如果当前机器没有可用凭据，使用下面的本地安装方式。
 
@@ -110,7 +110,7 @@ Demo~/
 - [x] GFM 表格解析与列宽排版
 - [ ] 引用式链接（reference-style links）与脚注
 - [ ] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
-- [ ] 图片渲染：内置 Sprite 引用与异步 URL 图片加载
+- [x] 图片渲染：Resources / AssetBundle 路径、HTTP(S) URL 和加载失败占位
 - [ ] 代码块语言标签与可选的语法高亮接口
 - [ ] 文本选择与复制
 - [ ] 链接 hover 光标、hover 高亮和键盘导航
@@ -127,6 +127,7 @@ Demo~/
 - **文档级排版**：按块级元素独立排版，支持标题层级、段落间距、嵌套列表、引用缩进、代码块背景、表格和分隔线。
 - **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
 - **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
+- **图片**：支持 HTTP(S)、Resources 相对路径和 AssetBundle 地址，异步加载并以 RawImage 叠加渲染；失败时显示错误占位。
 - **主题**：内置 Light / Dark 两套配色，切换主题时正文、标题、引用与底板一起更新。
 - **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
 - **纯 C# 解析器**：解析器不依赖 UnityEngine，可单独在 .NET 中测试。
@@ -146,6 +147,10 @@ Demo~/
 | `MarkdownTheme theme` | 颜色、背景、间距、标题比例等。 |
 | `bool enableLinks` | 是否启用链接命中与事件。 |
 | `MarkdownLinkEvent onLinkClicked` | 链接点击事件，参数为 URL。 |
+| `float maxImageWidth` | 图片最大宽度；0 表示使用可用内容宽度。 |
+| `float maxImageHeight` | 图片最大高度；0 表示不限制。 |
+| `MarkdownImageLoader imageLoader` | 自定义图片加载器；为 null 时使用内置 HTTP / Resources / AssetBundle 加载。 |
+| `ClearImageCache()` | 清空已加载图片并触发重新布局。 |
 | `MarkdownDocument document` | 当前解析结果，可读取 blocks。 |
 | `float contentHeight` | 当前宽度下的文档高度。 |
 | `void ApplyTheme(MarkdownTheme)` | 应用主题，并同步 `theme.bodyColor` 到 `color`。 |
@@ -162,6 +167,49 @@ Demo~/
 Dark 主题内置不透明深色 `backgroundColor` 和浅色 `bodyColor`，因此即使 `MarkdownText` 的父级背景仍是浅色，切换后标题、正文、列表和引用也都有足够对比度。将 `theme.backgroundColor` 的 alpha 调为 `0` 可以恢复透明底板；Light 主题默认透明。
 
 演示工程会额外切换整页背景；包组件只负责自己的文档矩形。
+
+## 图片
+
+图片使用 `![alt](url)` 语法。为了不影响文字网格的字体图集，已加载的图片由 MarkdownText 自动创建的隐藏子层中的 `RawImage` 叠加显示。
+
+支持的地址：
+
+| 写法 | 说明 |
+| --- | --- |
+| `https://example.com/logo.png` | UnityWebRequestTexture 异步下载。 |
+| `resources://Images/Logo` | 从 `Resources` 加载，可省略扩展名。 |
+| `Images/Logo` | 没有协议前缀时默认按 Resources 相对路径处理。 |
+| `ab://path/to/bundle#AssetName` | 从 AssetBundle 加载纹理；相对路径基于 `Application.streamingAssetsPath`。`assetbundle://` 同义。 |
+
+示例：
+
+```markdown
+![Logo](SSMarkdownLogo)
+![Remote](https://example.com/logo.png)
+![Bundle](ab://ui#Logo)
+```
+
+内置加载器在第一帧先显示占位框，加载完成后自动重新布局。下载或资源加载失败时，会在原位置显示 “Image failed to load” 错误框和 alt 文本。
+
+`maxImageWidth`（0 = 可用宽度）和 `maxImageHeight`（0 = 不限制）可以限制显示尺寸。图片不会被放大，只会按比例缩小。
+
+如果项目使用自己的 AssetBundle 管理器，可以覆盖加载器：
+
+```csharp
+markdown.imageLoader = (url, onLoaded, onError) =>
+{
+    // 在自定义管理器中按 url 取 Texture2D
+    Texture2D texture = MyBundleManager.LoadTexture(url);
+    if (texture != null) onLoaded(texture);
+    else onError("not found");
+};
+```
+
+自定义加载器必须在主线程调用回调。`ClearImageCache()` 会清空缓存并重新加载。
+
+`ab://` 的相对路径基于 `Application.streamingAssetsPath`；Android 的 StreamingAssets 不是普通文件路径，请改用自定义加载器或先复制到可读目录。
+
+图片作为独立块参与排版：包含文字和图片的段落会被拆成“段落 + 图片 + 段落”。表格单元格和列表项内的图片语法仍显示为 alt 链接。
 
 ## 布局建议
 
@@ -216,8 +264,7 @@ Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时
 **有意不支持（见待办）**
 
 - 脚注、引用式链接、任务列表
-- 语法高亮
-- 图片像素级绘制（`![alt](url)` 会显示 alt 文本并保留链接目标）
+- 语法高亮、表格内嵌图片
 - 原始 HTML 样式（标签会被忽略，不参与渲染）
 
 解析器对未知结构采取“退化为普通文本”的策略，不会在运行时抛异常。
@@ -271,7 +318,7 @@ Unity EditMode 测试通过 `Demo~` 工程运行（manifest 中已配置 `"testa
   -testResults TestResults.xml
 ```
 
-当前测试覆盖解析、样式、列表、引用、代码块尖括号、表格、链接命中、主题切换和空文档高度。
+当前测试覆盖解析、样式、列表、引用、代码块尖括号、表格、图片加载/失败占位、链接命中、主题切换和空文档高度。
 
 ## 截图
 

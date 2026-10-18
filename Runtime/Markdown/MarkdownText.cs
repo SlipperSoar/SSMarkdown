@@ -19,7 +19,7 @@ namespace SS.UIComponent
     /// </summary>
     [AddComponentMenu("UI/Markdown Text", 12)]
     [DefaultExecutionOrder(1000)]
-    public sealed class MarkdownText : MaskableGraphic, ILayoutElement, IPointerClickHandler
+    public sealed partial class MarkdownText : MaskableGraphic, ILayoutElement, IPointerClickHandler
     {
         [SerializeField, TextArea(4, 24)] private string m_Text = string.Empty;
         [SerializeField] private Font m_Font;
@@ -28,6 +28,8 @@ namespace SS.UIComponent
         [SerializeField] private Vector4 m_Padding = new Vector4(2f, 2f, 2f, 2f);
         [SerializeField] private MarkdownTheme m_Theme = new MarkdownTheme();
         [SerializeField] private bool m_EnableLinks = true;
+        [SerializeField, Min(0f)] private float m_MaxImageWidth = 0f;
+        [SerializeField, Min(0f)] private float m_MaxImageHeight = 480f;
         [SerializeField] private MarkdownLinkEvent m_OnLinkClicked = new MarkdownLinkEvent();
 
         [NonSerialized] private MarkdownDocument m_Document;
@@ -51,6 +53,7 @@ namespace SS.UIComponent
         [NonSerialized] private MarkdownDecorationLayer m_Decoration;
         [NonSerialized] private List<MarkdownSolidRect> m_PendingSolids;
         [NonSerialized] private bool m_DisableFontTextureRebuiltCallback;
+        [NonSerialized] private bool m_BuildingLayout;
         [NonSerialized] private bool m_SyncingDecoration;
 
         private static Font s_DefaultFont;
@@ -152,6 +155,34 @@ namespace SS.UIComponent
                 if (m_EnableLinks == value)
                     return;
                 m_EnableLinks = value;
+                MarkDirty();
+            }
+        }
+
+        /// <summary>Maximum rendered image width. 0 means the available content width.</summary>
+        public float maxImageWidth
+        {
+            get => m_MaxImageWidth;
+            set
+            {
+                float next = Mathf.Max(0f, value);
+                if (Mathf.Approximately(m_MaxImageWidth, next))
+                    return;
+                m_MaxImageWidth = next;
+                MarkDirty();
+            }
+        }
+
+        /// <summary>Maximum rendered image height. 0 means unlimited.</summary>
+        public float maxImageHeight
+        {
+            get => m_MaxImageHeight;
+            set
+            {
+                float next = Mathf.Max(0f, value);
+                if (Mathf.Approximately(m_MaxImageHeight, next))
+                    return;
+                m_MaxImageHeight = next;
                 MarkDirty();
             }
         }
@@ -328,6 +359,7 @@ namespace SS.UIComponent
             base.OnEnable();
             EnsureFont();
             EnsureDecorationLayer();
+            SetImagesVisible(true);
             m_DocumentDirty = true;
             m_LayoutDirty = true;
             Font.textureRebuilt += OnFontTextureRebuilt;
@@ -339,12 +371,14 @@ namespace SS.UIComponent
             Font.textureRebuilt -= OnFontTextureRebuilt;
             if (m_Decoration != null)
                 m_Decoration.enabled = false;
+            SetImagesVisible(false);
             base.OnDisable();
         }
 
         protected override void OnDestroy()
         {
             Font.textureRebuilt -= OnFontTextureRebuilt;
+            DisposeImageResources();
             // The decoration layer is a sibling rather than a child. It watches
             // its owner reference and destroys itself, which avoids double
             // destruction while a parent Canvas is being torn down.
@@ -365,16 +399,18 @@ namespace SS.UIComponent
             if (m_Decoration == null)
                 EnsureDecorationLayer();
 
-            if (m_Decoration == null)
-                return;
-
-            SyncDecorationLayer();
-            if (m_PendingSolids != null)
+            if (m_Decoration != null)
             {
-                m_Decoration.SetQuads(m_PendingSolids);
-                m_Decoration.enabled = isActiveAndEnabled;
-                m_PendingSolids = null;
+                SyncDecorationLayer();
+                if (m_PendingSolids != null)
+                {
+                    m_Decoration.SetQuads(m_PendingSolids);
+                    m_Decoration.enabled = isActiveAndEnabled;
+                    m_PendingSolids = null;
+                }
             }
+
+            SyncImagePlacements();
         }
 
         protected override void OnTransformParentChanged()
@@ -488,6 +524,7 @@ namespace SS.UIComponent
             m_LayoutDirty = false;
 
             PushDecorations(m_Layout);
+            QueueImagePlacements(m_Layout.Images);
             return m_Layout;
         }
 
@@ -507,6 +544,7 @@ namespace SS.UIComponent
             }
 
             m_DisableFontTextureRebuiltCallback = true;
+            m_BuildingLayout = true;
             try
             {
                 float availableWidth = Mathf.Max(1f, width - padding.x - padding.z);
@@ -542,6 +580,7 @@ namespace SS.UIComponent
             finally
             {
                 m_DisableFontTextureRebuiltCallback = false;
+                m_BuildingLayout = false;
             }
 
             return result;
@@ -562,6 +601,8 @@ namespace SS.UIComponent
                     return BuildCodeBlock(result, block, top, availableWidth, pixelsPerUnit);
                 case MarkdownBlockType.Table:
                     return BuildTable(result, block, top, availableWidth, pixelsPerUnit);
+                case MarkdownBlockType.Image:
+                    return BuildImageBlock(result, block, top, availableWidth, pixelsPerUnit);
                 case MarkdownBlockType.ThematicBreak:
                     AddSolidNormalized(
                         result,
@@ -1618,6 +1659,7 @@ namespace SS.UIComponent
             public float Height;
             public readonly List<GlyphQuad> Glyphs = new List<GlyphQuad>();
             public readonly List<MarkdownSolidRect> Solids = new List<MarkdownSolidRect>();
+            public readonly List<MarkdownImagePlacement> Images = new List<MarkdownImagePlacement>();
             public readonly Dictionary<string, LinkRegion> Links = new Dictionary<string, LinkRegion>(StringComparer.Ordinal);
 
             public void Offset(float x, float y)
@@ -1652,6 +1694,15 @@ namespace SS.UIComponent
                         rect.y += y;
                         rects[i] = rect;
                     }
+                }
+
+                for (int i = 0; i < Images.Count; i++)
+                {
+                    MarkdownImagePlacement image = Images[i];
+                    Rect rect = image.Rect;
+                    rect.x += x;
+                    rect.y += y;
+                    image.Rect = rect;
                 }
             }
         }

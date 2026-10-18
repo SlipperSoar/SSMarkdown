@@ -61,10 +61,11 @@ internal static class Program
         AssertTrue(link != null, "link span exists");
         AssertEqual("https://example.com/a?b=1", link.Url, "link destination");
         AssertTrue((link.Style & MarkdownInlineStyle.Link) != 0, "link style");
-        var image = spans.FirstOrDefault(s => s.Text == "alt text");
-        AssertTrue(image != null, "image alt text exists");
-        AssertTrue(image.IsImage, "image flag");
-        AssertEqual("image.png", image.Url, "image url");
+
+        var image = doc.Blocks.FirstOrDefault(b => b.Type == MarkdownBlockType.Image);
+        AssertTrue(image != null, "image block exists");
+        AssertEqual("alt text", image.ImageAlt, "image alt text exists");
+        AssertEqual("image.png", image.ImageUrl, "image url");
     }
 
     private static void TestCodeBlocks()

@@ -27,7 +27,19 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 
 ## Not implemented
 
-Footnotes, reference-style links, task lists, raw HTML styling and syntax highlighting are intentionally out of scope. Image syntax displays its alt text as a link target.
+Footnotes, reference-style links, task lists, raw HTML styling and syntax highlighting are intentionally out of scope.
+
+## Images
+
+Images are loaded asynchronously and shown inside the document. Local paths first try `Resources`, and `ab://` addresses load a texture from an AssetBundle.
+
+```markdown
+![Resources logo](SSMarkdownLogo)
+![Remote image](https://example.com/image.png)
+![Bundle image](ab://ui#Logo)
+```
+
+A failed load is replaced with an inline error box.
 
 ## Table example
 
