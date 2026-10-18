@@ -11,7 +11,7 @@
 - **文档级排版**：按块级元素独立排版，支持标题层级、段落间距、嵌套列表、引用缩进、代码块背景和分隔线。
 - **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
 - **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
-- **主题**：内置 Light / Dark 两套配色，可复制、修改 `MarkdownTheme`。
+- **主题**：内置 Light / Dark 两套配色，可复制、修改 `MarkdownTheme`；Dark 主题内置深色底板，避免浅色父级下白字看不清。
 - **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
 - **纯 C# 解析器**：解析器不依赖 UnityEngine，可单独在 .NET 中测试。
 - **编辑器工具**：`GameObject/UI/Markdown Text` 菜单、自定义 Inspector、一键重建演示场景。
@@ -86,6 +86,8 @@ public sealed class LinkExample : MonoBehaviour
 | `bool TryGetLinkAtLocalPosition(...)` | 本地坐标链接命中，便于实现悬浮效果。 |
 
 `MarkdownTheme` 提供 `CreateLight()`、`CreateDark()`、`CopyFrom()`，组件本身也提供 `UseLightTheme()` / `UseDarkTheme()`。
+
+Dark 主题自带不透明深色 `backgroundColor`，因此即使 `MarkdownText` 所在的父级仍是浅色，切换后标题、引用和正文也有足够的对比度。将 `theme.backgroundColor` 的 alpha 调为 `0` 可以恢复透明底板；Light 主题默认透明。
 
 ## 布局建议
 

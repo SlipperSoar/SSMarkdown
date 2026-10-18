@@ -107,6 +107,10 @@ namespace SS.UIComponent.Tests
             m_View.text = "> quote\n\n`code`";
             Canvas.ForceUpdateCanvases();
             Assert.Greater(m_View.contentHeight, 0f);
+            Assert.Greater(m_View.theme.backgroundColor.a, 0f);
+
+            m_View.UseLightTheme();
+            Assert.AreEqual(0f, m_View.theme.backgroundColor.a, 0.001f);
         }
 
         [Test]

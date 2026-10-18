@@ -490,17 +490,18 @@ namespace SS.UIComponent
         private LayoutResult BuildLayout(float width, float height, float pixelsPerUnit)
         {
             var result = new LayoutResult { Width = width };
+            theme.Validate();
             MarkdownDocument doc = document;
             if (doc == null || doc.Blocks.Count == 0)
             {
                 result.Height = 0f;
+                AddDocumentBackground(result, width, height, 0f);
                 result.Offset(
                     -rectTransform.pivot.x * width + padding.x,
                     (1f - rectTransform.pivot.y) * height - padding.y);
                 return result;
             }
 
-            theme.Validate();
             m_DisableFontTextureRebuiltCallback = true;
             try
             {
@@ -527,6 +528,8 @@ namespace SS.UIComponent
                     else if (m_Alignment == TextAnchor.LowerLeft || m_Alignment == TextAnchor.LowerCenter || m_Alignment == TextAnchor.LowerRight)
                         verticalShift = extra;
                 }
+
+                AddDocumentBackground(result, width, height, result.Height, verticalShift);
 
                 float originX = -rectTransform.pivot.x * width + padding.x;
                 float originY = (1f - rectTransform.pivot.y) * height - padding.y - verticalShift;
@@ -1004,6 +1007,34 @@ namespace SS.UIComponent
                         height),
                     ThemeColor(theme.quoteBarColor));
             }
+        }
+
+        private void AddDocumentBackground(
+            LayoutResult result,
+            float width,
+            float height,
+            float contentHeight,
+            float verticalShift = 0f)
+        {
+            Color background = ThemeColor(theme.backgroundColor);
+            if (background.a <= 0f)
+                return;
+
+            float backgroundHeight = Mathf.Max(height, contentHeight);
+            if (backgroundHeight <= 0f || width <= 0f)
+                return;
+
+            // Coordinates are relative to the padded content origin. Extending
+            // left/up by the padding makes the fill cover the whole RectTransform.
+            result.Solids.Insert(
+                0,
+                new MarkdownSolidRect(
+                    new Rect(
+                        -padding.x,
+                        -(backgroundHeight - padding.y) + verticalShift,
+                        width,
+                        backgroundHeight),
+                    background));
         }
 
         private static void AddSolidNormalized(LayoutResult result, Rect rect, Color color)

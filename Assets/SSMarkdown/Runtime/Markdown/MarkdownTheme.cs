@@ -11,6 +11,10 @@ namespace SS.UIComponent
     [Serializable]
     public sealed class MarkdownTheme
     {
+        [Header("Surface")]
+        [Tooltip("Optional page fill drawn behind the document. Use alpha 0 for a transparent MarkdownText.")]
+        public Color backgroundColor = new Color(0f, 0f, 0f, 0f);
+
         [Header("Inline Colors")]
         public Color headingColor = new Color32(13, 20, 30, 255);
         public Color linkColor = new Color32(9, 105, 218, 255);
@@ -65,6 +69,7 @@ namespace SS.UIComponent
         {
             var theme = new MarkdownTheme
             {
+                backgroundColor = new Color32(13, 17, 23, 255),
                 headingColor = new Color32(240, 246, 252, 255),
                 linkColor = new Color32(88, 166, 255, 255),
                 linkUnderlineColor = new Color32(88, 166, 255, 150),
@@ -88,6 +93,7 @@ namespace SS.UIComponent
             if (other == null)
                 return;
 
+            backgroundColor = other.backgroundColor;
             headingColor = other.headingColor;
             linkColor = other.linkColor;
             linkUnderlineColor = other.linkUnderlineColor;
