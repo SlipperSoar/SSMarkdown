@@ -11,6 +11,7 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 - Indented code blocks
 - Block quotes, including nested quotes
 - Ordered and unordered lists, including nested items
+- GFM tables with left, center and right alignment
 - Thematic breaks with `---`, `***` or `___`
 
 ## Inline elements
@@ -26,7 +27,15 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 
 ## Not implemented
 
-Tables, footnotes, reference-style links, task lists, raw HTML styling and syntax highlighting are intentionally out of scope. Image syntax displays its alt text as a link target.
+Footnotes, reference-style links, task lists, raw HTML styling and syntax highlighting are intentionally out of scope. Image syntax displays its alt text as a link target.
+
+## Table example
+
+| Feature | Ready | Example |
+| :--- | :---: | ---: |
+| Bold | Yes | `**text**` |
+| Links | Yes | `[text](url)` |
+| Tables | Yes | this one |
 
 ## Theme notes
 

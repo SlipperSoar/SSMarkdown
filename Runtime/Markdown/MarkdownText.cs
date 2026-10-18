@@ -560,6 +560,8 @@ namespace SS.UIComponent
                     return BuildHeading(result, block, top, availableWidth, pixelsPerUnit);
                 case MarkdownBlockType.CodeBlock:
                     return BuildCodeBlock(result, block, top, availableWidth, pixelsPerUnit);
+                case MarkdownBlockType.Table:
+                    return BuildTable(result, block, top, availableWidth, pixelsPerUnit);
                 case MarkdownBlockType.ThematicBreak:
                     AddSolidNormalized(
                         result,
@@ -627,6 +629,312 @@ namespace SS.UIComponent
 
             AddQuoteBars(result, block, top, totalHeight);
             return totalHeight;
+        }
+
+        private float BuildTable(
+            LayoutResult result,
+            MarkdownBlock block,
+            float top,
+            float availableWidth,
+            float pixelsPerUnit)
+        {
+            MarkdownTable table = block.Table;
+            if (table == null || table.ColumnCount == 0)
+                return 0f;
+
+            int columns = table.ColumnCount;
+            int size = Mathf.Max(1, m_FontSize);
+            float left = block.QuoteDepth * theme.quoteIndent + block.ListDepth * theme.listIndent;
+            float tableWidth = Mathf.Max(1f, availableWidth - left);
+            float padding = theme.tableCellPadding;
+
+            float[] widths = ComputeTableColumnWidths(table, size, tableWidth, pixelsPerUnit);
+            float actualWidth = 0f;
+            for (int c = 0; c < columns; c++)
+                actualWidth += widths[c];
+
+            float headerHeight = MeasureTableRow(table.Header, widths, size, true, pixelsPerUnit);
+            var rowHeights = new float[table.Rows.Count];
+            for (int r = 0; r < table.Rows.Count; r++)
+                rowHeights[r] = MeasureTableRow(table.Rows[r], widths, size, false, pixelsPerUnit);
+
+            float tableHeight = headerHeight;
+            for (int r = 0; r < rowHeights.Length; r++)
+                tableHeight += rowHeights[r];
+
+            float headerTop = top;
+            AddSolidNormalized(
+                result,
+                new Rect(left, -headerTop - headerHeight, actualWidth, headerHeight),
+                ThemeColor(theme.tableHeaderBackgroundColor));
+
+            float rowTop = headerTop + headerHeight;
+            for (int r = 0; r < table.Rows.Count; r++)
+            {
+                if ((r & 1) == 1)
+                {
+                    AddSolidNormalized(
+                        result,
+                        new Rect(left, -rowTop - rowHeights[r], actualWidth, rowHeights[r]),
+                        ThemeColor(theme.tableRowBackgroundColor));
+                }
+                rowTop += rowHeights[r];
+            }
+
+            AddTableBorders(result, left, top, actualWidth, tableHeight, widths, headerHeight, rowHeights);
+
+            float columnX = left;
+            for (int c = 0; c < columns; c++)
+            {
+                DrawTableCell(
+                    result,
+                    table.Header[c],
+                    columnX,
+                    headerTop,
+                    widths[c],
+                    headerHeight,
+                    size,
+                    true,
+                    table.Alignments[c],
+                    ThemeColor(theme.tableHeaderTextColor),
+                    pixelsPerUnit);
+                columnX += widths[c];
+            }
+
+            rowTop = headerTop + headerHeight;
+            for (int r = 0; r < table.Rows.Count; r++)
+            {
+                columnX = left;
+                for (int c = 0; c < columns; c++)
+                {
+                    DrawTableCell(
+                        result,
+                        table.Rows[r][c],
+                        columnX,
+                        rowTop,
+                        widths[c],
+                        rowHeights[r],
+                        size,
+                        false,
+                        table.Alignments[c],
+                        color,
+                        pixelsPerUnit);
+                    columnX += widths[c];
+                }
+                rowTop += rowHeights[r];
+            }
+
+            AddQuoteBars(result, block, top, tableHeight);
+            return tableHeight;
+        }
+
+        private float[] ComputeTableColumnWidths(
+            MarkdownTable table,
+            int fontSize,
+            float tableWidth,
+            float pixelsPerUnit)
+        {
+            int columns = table.ColumnCount;
+            var preferred = new float[columns];
+            float padding = theme.tableCellPadding * 2f;
+
+            for (int c = 0; c < columns; c++)
+            {
+                float width = theme.tableMinColumnWidth;
+                width = Mathf.Max(width, MeasureTableCellWidth(table.Header[c], fontSize, true, pixelsPerUnit) + padding);
+                for (int r = 0; r < table.Rows.Count; r++)
+                    width = Mathf.Max(width, MeasureTableCellWidth(table.Rows[r][c], fontSize, false, pixelsPerUnit) + padding);
+                preferred[c] = Mathf.Min(width, tableWidth);
+            }
+
+            float total = 0f;
+            for (int c = 0; c < columns; c++)
+                total += preferred[c];
+
+            if (total <= 0f)
+            {
+                for (int c = 0; c < columns; c++)
+                    preferred[c] = tableWidth / columns;
+                total = tableWidth;
+            }
+
+            var widths = new float[columns];
+            if (total <= tableWidth)
+            {
+                float extra = tableWidth - total;
+                for (int c = 0; c < columns; c++)
+                    widths[c] = preferred[c] + extra * (preferred[c] / total);
+                return widths;
+            }
+
+            float scale = tableWidth / total;
+            for (int c = 0; c < columns; c++)
+                widths[c] = Mathf.Max(theme.tableMinColumnWidth, preferred[c] * scale);
+
+            float sum = 0f;
+            for (int c = 0; c < columns; c++)
+                sum += widths[c];
+
+            if (sum > tableWidth)
+            {
+                float adjustable = sum - theme.tableMinColumnWidth * columns;
+                if (adjustable > 0.001f)
+                {
+                    float factor = Mathf.Clamp01((sum - tableWidth) / adjustable);
+                    for (int c = 0; c < columns; c++)
+                        widths[c] -= (widths[c] - theme.tableMinColumnWidth) * factor;
+                }
+            }
+            else if (sum < tableWidth)
+            {
+                float extra = (tableWidth - sum) / columns;
+                for (int c = 0; c < columns; c++)
+                    widths[c] += extra;
+            }
+
+            return widths;
+        }
+
+        private float MeasureTableRow(
+            IReadOnlyList<MarkdownTableCell> cells,
+            float[] widths,
+            int fontSize,
+            bool header,
+            float pixelsPerUnit)
+        {
+            float height = fontSize * theme.lineSpacing;
+            int count = Mathf.Min(cells.Count, widths.Length);
+            for (int c = 0; c < count; c++)
+            {
+                float width = Mathf.Max(1f, widths[c] - theme.tableCellPadding * 2f);
+                MarkdownRichText rich = MarkdownRichTextBuilder.Build(
+                    cells[c].Inlines,
+                    theme,
+                    header,
+                    ThemeColor(theme.linkColor),
+                    ThemeColor(theme.codeColor));
+                TextGenerationSettings settings = CreateSettings(
+                    fontSize,
+                    width,
+                    TextAnchor.UpperLeft,
+                    header ? ThemeColor(theme.tableHeaderTextColor) : color);
+                m_MarkerGenerator.Populate(rich.Markup, settings);
+                float cellHeight = GetTextHeight(m_MarkerGenerator, pixelsPerUnit);
+                if (cellHeight <= 0f)
+                    cellHeight = fontSize * theme.lineSpacing;
+                height = Mathf.Max(height, cellHeight);
+            }
+            return height + theme.tableCellPadding * 2f;
+        }
+
+        private float MeasureTableCellWidth(
+            MarkdownTableCell cell,
+            int fontSize,
+            bool header,
+            float pixelsPerUnit)
+        {
+            MarkdownRichText rich = MarkdownRichTextBuilder.Build(
+                cell.Inlines,
+                theme,
+                header,
+                ThemeColor(theme.linkColor),
+                ThemeColor(theme.codeColor));
+            TextGenerationSettings settings = CreateSettings(
+                fontSize,
+                0f,
+                TextAnchor.UpperLeft,
+                header ? ThemeColor(theme.tableHeaderTextColor) : color);
+            return m_MarkerGenerator.GetPreferredWidth(rich.Markup, settings) / pixelsPerUnit;
+        }
+
+        private void DrawTableCell(
+            LayoutResult result,
+            MarkdownTableCell cell,
+            float columnX,
+            float rowTop,
+            float columnWidth,
+            float rowHeight,
+            int fontSize,
+            bool header,
+            MarkdownTableAlignment tableAlignment,
+            Color textColor,
+            float pixelsPerUnit)
+        {
+            MarkdownRichText rich = MarkdownRichTextBuilder.Build(
+                cell.Inlines,
+                theme,
+                header,
+                ThemeColor(theme.linkColor),
+                ThemeColor(theme.codeColor));
+
+            float innerWidth = Mathf.Max(1f, columnWidth - theme.tableCellPadding * 2f);
+            TextAnchor anchor = ToTableAnchor(tableAlignment);
+            TextGenerationSettings settings = CreateSettings(fontSize, innerWidth, anchor, textColor);
+            m_Generator.Populate(rich.Markup, settings);
+
+            AppendGeneratedGlyphs(
+                result,
+                m_Generator,
+                rich,
+                cell.Inlines,
+                columnX + theme.tableCellPadding,
+                rowTop + theme.tableCellPadding,
+                pixelsPerUnit,
+                true);
+        }
+
+        private void AddTableBorders(
+            LayoutResult result,
+            float left,
+            float top,
+            float width,
+            float height,
+            float[] columnWidths,
+            float headerHeight,
+            float[] rowHeights)
+        {
+            Color borderColor = ThemeColor(theme.tableBorderColor);
+            if (borderColor.a <= 0f)
+                return;
+
+            float thickness = Mathf.Max(1f, theme.tableBorderThickness);
+            AddSolidNormalized(result, new Rect(left, -top - thickness, width, thickness), borderColor);
+            AddSolidNormalized(result, new Rect(left, -top - height, width, thickness), borderColor);
+            AddSolidNormalized(result, new Rect(left, -top - height, thickness, height), borderColor);
+            AddSolidNormalized(result, new Rect(left + width - thickness, -top - height, thickness, height), borderColor);
+
+            float rowY = top + headerHeight;
+            AddSolidNormalized(result, new Rect(left, -rowY - thickness * 0.5f, width, thickness), borderColor);
+            for (int r = 0; r < rowHeights.Length - 1; r++)
+            {
+                rowY += rowHeights[r];
+                AddSolidNormalized(result, new Rect(left, -rowY - thickness * 0.5f, width, thickness), borderColor);
+            }
+
+            float columnX = left;
+            for (int c = 0; c < columnWidths.Length - 1; c++)
+            {
+                columnX += columnWidths[c];
+                AddSolidNormalized(
+                    result,
+                    new Rect(columnX - thickness * 0.5f, -top - height, thickness, height),
+                    borderColor);
+            }
+        }
+
+        private TextAnchor ToTableAnchor(MarkdownTableAlignment alignment)
+        {
+            switch (alignment)
+            {
+                case MarkdownTableAlignment.Left:
+                    return TextAnchor.UpperLeft;
+                case MarkdownTableAlignment.Center:
+                    return TextAnchor.UpperCenter;
+                case MarkdownTableAlignment.Right:
+                    return TextAnchor.UpperRight;
+                default:
+                    return ToUpperAnchor(m_Alignment);
+            }
         }
 
         private float BuildFlowBlock(
@@ -1125,6 +1433,8 @@ namespace SS.UIComponent
                 return theme.ruleSpacing;
             if (current.Type == MarkdownBlockType.CodeBlock || previous.Type == MarkdownBlockType.CodeBlock)
                 return theme.codeBlockSpacing;
+            if (current.Type == MarkdownBlockType.Table || previous.Type == MarkdownBlockType.Table)
+                return theme.tableSpacing;
             if (current.Type == MarkdownBlockType.ListItem &&
                 previous.Type == MarkdownBlockType.ListItem &&
                 current.ListDepth == previous.ListDepth)

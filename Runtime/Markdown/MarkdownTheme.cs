@@ -34,6 +34,12 @@ namespace SS.UIComponent
         public Color listMarkerColor = new Color32(87, 96, 106, 255);
         public Color strikeThroughColor = new Color32(87, 96, 106, 200);
 
+        [Header("Tables")]
+        public Color tableBorderColor = new Color32(175, 184, 193, 150);
+        public Color tableHeaderBackgroundColor = new Color32(175, 184, 193, 50);
+        public Color tableRowBackgroundColor = new Color32(175, 184, 193, 18);
+        public Color tableHeaderTextColor = new Color32(13, 20, 30, 255);
+
         [Header("Metrics")]
         [Min(0.5f)] public float lineSpacing = 1.18f;
         [Min(0f)] public float paragraphSpacing = 10f;
@@ -46,6 +52,10 @@ namespace SS.UIComponent
         [Min(0f)] public float quoteBarWidth = 3f;
         [Min(0f)] public float codePadding = 10f;
         [Min(0f)] public float codeBlockSpacing = 10f;
+        [Min(0f)] public float tableSpacing = 12f;
+        [Min(0f)] public float tableCellPadding = 8f;
+        [Min(1f)] public float tableBorderThickness = 1f;
+        [Min(16f)] public float tableMinColumnWidth = 48f;
         [Min(0f)] public float ruleSpacing = 14f;
         [Min(1f)] public float ruleThickness = 1f;
         [Min(1f)] public float bulletSize = 4f;
@@ -85,7 +95,11 @@ namespace SS.UIComponent
                 quoteBarColor = new Color32(110, 118, 129, 190),
                 ruleColor = new Color32(110, 118, 129, 150),
                 listMarkerColor = new Color32(139, 148, 158, 255),
-                strikeThroughColor = new Color32(139, 148, 158, 220)
+                strikeThroughColor = new Color32(139, 148, 158, 220),
+                tableBorderColor = new Color32(110, 118, 129, 150),
+                tableHeaderBackgroundColor = new Color32(110, 118, 129, 55),
+                tableRowBackgroundColor = new Color32(110, 118, 129, 20),
+                tableHeaderTextColor = new Color32(240, 246, 252, 255)
             };
             return theme;
         }
@@ -111,6 +125,10 @@ namespace SS.UIComponent
             ruleColor = other.ruleColor;
             listMarkerColor = other.listMarkerColor;
             strikeThroughColor = other.strikeThroughColor;
+            tableBorderColor = other.tableBorderColor;
+            tableHeaderBackgroundColor = other.tableHeaderBackgroundColor;
+            tableRowBackgroundColor = other.tableRowBackgroundColor;
+            tableHeaderTextColor = other.tableHeaderTextColor;
 
             lineSpacing = other.lineSpacing;
             paragraphSpacing = other.paragraphSpacing;
@@ -123,6 +141,10 @@ namespace SS.UIComponent
             quoteBarWidth = other.quoteBarWidth;
             codePadding = other.codePadding;
             codeBlockSpacing = other.codeBlockSpacing;
+            tableSpacing = other.tableSpacing;
+            tableCellPadding = other.tableCellPadding;
+            tableBorderThickness = other.tableBorderThickness;
+            tableMinColumnWidth = other.tableMinColumnWidth;
             ruleSpacing = other.ruleSpacing;
             ruleThickness = other.ruleThickness;
             bulletSize = other.bulletSize;
@@ -158,6 +180,10 @@ namespace SS.UIComponent
             quoteBarWidth = Mathf.Max(0f, quoteBarWidth);
             codePadding = Mathf.Max(0f, codePadding);
             codeBlockSpacing = Mathf.Max(0f, codeBlockSpacing);
+            tableSpacing = Mathf.Max(0f, tableSpacing);
+            tableCellPadding = Mathf.Max(0f, tableCellPadding);
+            tableBorderThickness = Mathf.Max(1f, tableBorderThickness);
+            tableMinColumnWidth = Mathf.Max(16f, tableMinColumnWidth);
             ruleSpacing = Mathf.Max(0f, ruleSpacing);
             ruleThickness = Mathf.Max(1f, ruleThickness);
             bulletSize = Mathf.Max(1f, bulletSize);

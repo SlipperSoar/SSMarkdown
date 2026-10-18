@@ -116,6 +116,22 @@ namespace SS.UIComponent.Tests
         }
 
         [Test]
+        public void Renders_tables()
+        {
+            m_View.text = "| Name | Score |\n| :--- | ---: |\n| **Alice** | [link](https://example.com) |";
+            Canvas.ForceUpdateCanvases();
+
+            MarkdownBlock block = m_View.document.Blocks[0];
+            Assert.AreEqual(MarkdownBlockType.Table, block.Type);
+            Assert.AreEqual(2, block.Table.ColumnCount);
+            Assert.Greater(m_View.contentHeight, 0f);
+
+            Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();
+            Assert.IsNotNull(mesh);
+            Assert.Greater(mesh.vertexCount, 0);
+        }
+
+        [Test]
         public void Empty_text_has_zero_height()
         {
             m_View.text = string.Empty;

@@ -15,6 +15,15 @@ It does not depend on TextMeshPro or any third-party package.
 > The component handles the common documentation subset of Markdown.
 > Unsupported constructs simply fall back to readable plain text.
 
+## At a glance
+
+| Element | Status | Notes |
+| :--- | :---: | ---: |
+| Headings | Ready | H1–H6 |
+| Tables | Ready | GFM columns |
+| Lists | Ready | Nested |
+| Links | Ready | Clickable |
+
 ## Assigning a document
 
 ```csharp

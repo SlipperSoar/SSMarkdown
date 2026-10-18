@@ -36,6 +36,10 @@ namespace SS.UIComponent
             @"[ \t]+#+[ \t]*$",
             RegexOptions.CultureInvariant);
 
+        private static readonly Regex s_TableDelimiterCell = new Regex(
+            @"^:?-{3,}:?$",
+            RegexOptions.CultureInvariant);
+
         /// <summary>Parse a Markdown string into a block tree.</summary>
         public MarkdownDocument Parse(string markdown)
         {
@@ -91,6 +95,14 @@ namespace SS.UIComponent
                     continue;
                 }
 
+                // GFM table. The header line and delimiter row must agree on the
+                // number of cells; otherwise the delimiter is treated as a rule.
+                if (TryParseTable(lines, i, quoteDepth, output, out int tableEnd))
+                {
+                    i = tableEnd;
+                    continue;
+                }
+
                 // Setext heading. This intentionally runs before thematic breaks:
                 // "Title" followed by "---" is a heading, not a rule.
                 if (i + 1 < lines.Count && !IsBlank(lines[i]) && TryGetSetextLevel(lines[i + 1], out int setextLevel))
@@ -137,6 +149,196 @@ namespace SS.UIComponent
 
                 i = ParseParagraph(lines, i, quoteDepth, output);
             }
+        }
+
+        private bool TryParseTable(
+            IReadOnlyList<string> lines,
+            int start,
+            int quoteDepth,
+            List<MarkdownBlock> output,
+            out int next)
+        {
+            next = start;
+            if (start + 1 >= lines.Count)
+                return false;
+
+            string headerLine = lines[start];
+            if (!ContainsUnescapedPipe(headerLine))
+                return false;
+
+            List<string> headerCells = SplitTableRow(headerLine);
+            List<string> delimiterCells = SplitTableRow(lines[start + 1]);
+            if (headerCells.Count == 0 || delimiterCells.Count != headerCells.Count)
+                return false;
+
+            var alignments = new List<MarkdownTableAlignment>(delimiterCells.Count);
+            for (int c = 0; c < delimiterCells.Count; c++)
+            {
+                string delimiter = delimiterCells[c].Trim();
+                if (!s_TableDelimiterCell.IsMatch(delimiter))
+                    return false;
+
+                bool left = delimiter[0] == ':';
+                bool right = delimiter[delimiter.Length - 1] == ':';
+                alignments.Add(left && right
+                    ? MarkdownTableAlignment.Center
+                    : left
+                        ? MarkdownTableAlignment.Left
+                        : right
+                            ? MarkdownTableAlignment.Right
+                            : MarkdownTableAlignment.Default);
+            }
+
+            var table = new MarkdownTable();
+            for (int c = 0; c < alignments.Count; c++)
+            {
+                table.Alignments.Add(alignments[c]);
+                table.Header.Add(ParseTableCell(c < headerCells.Count ? headerCells[c] : string.Empty));
+            }
+
+            int i = start + 2;
+            while (i < lines.Count)
+            {
+                string line = lines[i];
+                if (IsBlank(line) || !ContainsUnescapedPipe(line))
+                    break;
+
+                List<string> cells = SplitTableRow(line);
+                if (cells.Count == 0)
+                    break;
+
+                var row = new List<MarkdownTableCell>(table.ColumnCount);
+                for (int c = 0; c < table.ColumnCount; c++)
+                    row.Add(ParseTableCell(c < cells.Count ? cells[c] : string.Empty));
+                table.Rows.Add(row);
+                i++;
+            }
+
+            var block = NewBlock(MarkdownBlockType.Table, quoteDepth);
+            block.Table = table;
+            output.Add(block);
+            next = i;
+            return true;
+        }
+
+        private static bool LooksLikeTableStart(IReadOnlyList<string> lines, int index)
+        {
+            if (index + 1 >= lines.Count)
+                return false;
+
+            string header = lines[index];
+            if (!ContainsUnescapedPipe(header))
+                return false;
+
+            List<string> headerCells = SplitTableRow(header);
+            List<string> delimiterCells = SplitTableRow(lines[index + 1]);
+            if (headerCells.Count == 0 || delimiterCells.Count != headerCells.Count)
+                return false;
+
+            for (int i = 0; i < delimiterCells.Count; i++)
+            {
+                if (!s_TableDelimiterCell.IsMatch(delimiterCells[i].Trim()))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static MarkdownTableCell ParseTableCell(string text)
+        {
+            var cell = new MarkdownTableCell();
+            var inlines = MarkdownInlineParser.Parse(text.Trim());
+            for (int i = 0; i < inlines.Count; i++)
+                cell.Inlines.Add(inlines[i]);
+            return cell;
+        }
+
+        private static List<string> SplitTableRow(string line)
+        {
+            var cells = new List<string>();
+            string text = line.Trim();
+            if (text.Length == 0)
+                return cells;
+
+            if (text[0] == '|')
+                text = text.Substring(1);
+            if (text.Length > 0 && text[text.Length - 1] == '|' && (text.Length < 2 || text[text.Length - 2] != '\\'))
+                text = text.Substring(0, text.Length - 1);
+
+            var cell = new StringBuilder();
+            int codeTicks = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+
+                if (c == '\\' && i + 1 < text.Length && text[i + 1] == '|')
+                {
+                    cell.Append('|');
+                    i++;
+                    continue;
+                }
+
+                if (c == '`')
+                {
+                    int run = 1;
+                    while (i + run < text.Length && text[i + run] == '`')
+                        run++;
+
+                    if (codeTicks == 0)
+                        codeTicks = run;
+                    else if (run >= codeTicks)
+                        codeTicks = 0;
+
+                    cell.Append('`', run);
+                    i += run - 1;
+                    continue;
+                }
+
+                if (c == '|' && codeTicks == 0)
+                {
+                    cells.Add(cell.ToString().Trim());
+                    cell.Clear();
+                    continue;
+                }
+
+                cell.Append(c);
+            }
+
+            cells.Add(cell.ToString().Trim());
+            return cells;
+        }
+
+        private static bool ContainsUnescapedPipe(string line)
+        {
+            int codeTicks = 0;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (c == '\\' && i + 1 < line.Length)
+                {
+                    i++;
+                    continue;
+                }
+
+                if (c == '`')
+                {
+                    int run = 1;
+                    while (i + run < line.Length && line[i + run] == '`')
+                        run++;
+
+                    if (codeTicks == 0)
+                        codeTicks = run;
+                    else if (run >= codeTicks)
+                        codeTicks = 0;
+
+                    i += run - 1;
+                    continue;
+                }
+
+                if (c == '|' && codeTicks == 0)
+                    return true;
+            }
+            return false;
         }
 
         private int ParseFencedCode(
@@ -324,6 +526,9 @@ namespace SS.UIComponent
                     break;
 
                 if (paragraph.Count > 0 && IsBlockStart(line))
+                    break;
+
+                if (paragraph.Count > 0 && LooksLikeTableStart(lines, i))
                     break;
 
                 // A setext underline terminates the paragraph and is consumed by

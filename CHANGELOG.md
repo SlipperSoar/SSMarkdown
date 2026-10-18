@@ -15,6 +15,7 @@ All notable changes to this project are documented here.
 - Runtime UGUI `MarkdownText` component with `text`, `SetMarkdown(string)` and `SetMarkdown(TextAsset)` APIs.
 - Markdown parser for headings, paragraphs, emphasis, strikethrough, inline code, links, autolinks, lists, quotes, fenced/indented code blocks, thematic breaks, escapes and entities.
 - Block layout using `TextGenerator`, with Light/Dark themes and configurable spacing.
+- GFM table parsing and rendering with column alignment, borders, header styling, row striping and inline cell formatting.
 - Dark theme paints an opaque page background and applies a light body/list color, so light text stays readable on light parents.
 - Clickable link hit testing and `onLinkClicked` event.
 - Hidden decoration layer for code backgrounds, quote bars, heading rules, link underlines and list bullets.

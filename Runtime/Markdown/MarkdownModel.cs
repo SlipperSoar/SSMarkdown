@@ -12,7 +12,8 @@ namespace SS.UIComponent
         CodeBlock,
         BlockQuote,
         ListItem,
-        ThematicBreak
+        ThematicBreak,
+        Table
     }
 
     /// <summary>Inline styling flags. A single inline can combine several flags.</summary>
@@ -55,6 +56,66 @@ namespace SS.UIComponent
         }
     }
 
+    /// <summary>Column alignment read from a GFM table delimiter row.</summary>
+    public enum MarkdownTableAlignment
+    {
+        Default,
+        Left,
+        Center,
+        Right
+    }
+
+    /// <summary>A single header or body cell in a Markdown table.</summary>
+    public sealed class MarkdownTableCell
+    {
+        public List<MarkdownInline> Inlines { get; } = new List<MarkdownInline>();
+
+        public string PlainText
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                for (int i = 0; i < Inlines.Count; i++)
+                    sb.Append(Inlines[i].Text);
+                return sb.ToString();
+            }
+        }
+    }
+
+    /// <summary>Parsed GFM table data.</summary>
+    public sealed class MarkdownTable
+    {
+        public List<MarkdownTableCell> Header { get; } = new List<MarkdownTableCell>();
+        public List<List<MarkdownTableCell>> Rows { get; } = new List<List<MarkdownTableCell>>();
+        public List<MarkdownTableAlignment> Alignments { get; } = new List<MarkdownTableAlignment>();
+
+        public int ColumnCount => Alignments.Count;
+
+        public string PlainText
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                AppendRow(sb, Header);
+                for (int i = 0; i < Rows.Count; i++)
+                {
+                    sb.Append('\n');
+                    AppendRow(sb, Rows[i]);
+                }
+                return sb.ToString();
+            }
+        }
+
+        private static void AppendRow(StringBuilder sb, List<MarkdownTableCell> cells)
+        {
+            for (int i = 0; i < cells.Count; i++)
+            {
+                if (i > 0) sb.Append(" | ");
+                sb.Append(cells[i].PlainText);
+            }
+        }
+    }
+
     /// <summary>A block-level Markdown element.</summary>
     public sealed class MarkdownBlock
     {
@@ -87,6 +148,9 @@ namespace SS.UIComponent
         /// <summary>Literal source of a code block.</summary>
         public string Code { get; internal set; }
 
+        /// <summary>Parsed data when <see cref="Type"/> is <see cref="MarkdownBlockType.Table"/>.</summary>
+        public MarkdownTable Table { get; internal set; }
+
         public List<MarkdownInline> Inlines { get; }
 
         public string PlainText
@@ -95,6 +159,8 @@ namespace SS.UIComponent
             {
                 if (Type == MarkdownBlockType.CodeBlock)
                     return Code ?? string.Empty;
+                if (Type == MarkdownBlockType.Table)
+                    return Table != null ? Table.PlainText : string.Empty;
 
                 var sb = new StringBuilder();
                 for (int i = 0; i < Inlines.Count; i++)

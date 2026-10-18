@@ -22,6 +22,7 @@ internal static class Program
         TestHardBreaks();
         TestAutolinks();
         TestNestedFormatting();
+        TestTables();
 
         Console.WriteLine();
         Console.WriteLine("Passed: " + s_Passed + "  Failed: " + s_Failed);
@@ -139,6 +140,25 @@ internal static class Program
         var spans = doc.Blocks[0].Inlines;
         AssertTrue(spans.Any(s => s.Text == "both" && s.Style == (MarkdownInlineStyle.Bold | MarkdownInlineStyle.Italic)), "triple style");
         AssertTrue(spans.Any(s => s.Text == "and italic" && s.Style == (MarkdownInlineStyle.Bold | MarkdownInlineStyle.Italic)), "nested style");
+    }
+
+    private static void TestTables()
+    {
+        var doc = MarkdownParser.ParseText("| Name | Score |\n| :--- | ---: |\n| **Alice** | 10 |\n| Bob | `20` |\n\nAfter");
+        AssertEqual(2, doc.Blocks.Count, "table block count");
+        AssertEqual(MarkdownBlockType.Table, doc.Blocks[0].Type, "table block type");
+        AssertEqual(2, doc.Blocks[0].Table.ColumnCount, "table column count");
+        AssertEqual(2, doc.Blocks[0].Table.Rows.Count, "table row count");
+        AssertEqual("Name", doc.Blocks[0].Table.Header[0].PlainText, "table header");
+        AssertEqual(MarkdownTableAlignment.Left, doc.Blocks[0].Table.Alignments[0], "table left alignment");
+        AssertEqual(MarkdownTableAlignment.Right, doc.Blocks[0].Table.Alignments[1], "table right alignment");
+        AssertTrue(doc.Blocks[0].Table.Rows[0][0].Inlines.Any(s => (s.Style & MarkdownInlineStyle.Bold) != 0), "table bold cell");
+        AssertEqual("After", doc.Blocks[1].PlainText, "table trailing paragraph");
+
+        var escaped = MarkdownParser.ParseText("| A | B |\n| --- | --- |\n| a \\| b | `x|y` |");
+        AssertEqual(1, escaped.Blocks.Count, "escaped table block count");
+        AssertEqual("a | b", escaped.Blocks[0].Table.Rows[0][0].PlainText, "escaped pipe");
+        AssertEqual("x|y", escaped.Blocks[0].Table.Rows[0][1].PlainText, "pipe in code span");
     }
 
     private static void AssertTrue(bool condition, string name)

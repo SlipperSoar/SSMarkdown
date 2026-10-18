@@ -82,13 +82,27 @@ namespace SS.UIComponent
             Color linkColor,
             Color codeColor)
         {
-            var markup = new StringBuilder(block.PlainText.Length + 32);
-            var ranges = new List<MarkdownRichText.Range>(block.Inlines.Count);
+            return Build(block.Inlines, theme, forceBold, linkColor, codeColor);
+        }
+
+        public static MarkdownRichText Build(
+            IReadOnlyList<MarkdownInline> inlines,
+            MarkdownTheme theme,
+            bool forceBold,
+            Color linkColor,
+            Color codeColor)
+        {
+            int capacity = 32;
+            for (int i = 0; i < inlines.Count; i++)
+                capacity += inlines[i].Text.Length + 16;
+
+            var markup = new StringBuilder(capacity);
+            var ranges = new List<MarkdownRichText.Range>(inlines.Count);
             var visible = new List<int>();
 
-            for (int i = 0; i < block.Inlines.Count; i++)
+            for (int i = 0; i < inlines.Count; i++)
             {
-                MarkdownInline inline = block.Inlines[i];
+                MarkdownInline inline = inlines[i];
                 if (inline.Text.Length == 0)
                     continue;
 

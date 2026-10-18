@@ -82,5 +82,23 @@ namespace SS.UIComponent.Tests
             MarkdownDocument document = MarkdownParser.ParseText("one  \ntwo\\\nthree");
             Assert.AreEqual("one\ntwo\nthree", document.Blocks[0].PlainText);
         }
+
+        [Test]
+        public void Parses_tables_with_alignment_and_escaped_pipes()
+        {
+            MarkdownDocument document = MarkdownParser.ParseText(
+                "| Name | Score |\n| :--- | ---: |\n| **Alice** | 10 |\n| a \\| b | `x|y` |");
+
+            Assert.AreEqual(1, document.Blocks.Count);
+            Assert.AreEqual(MarkdownBlockType.Table, document.Blocks[0].Type);
+            MarkdownTable table = document.Blocks[0].Table;
+            Assert.AreEqual(2, table.ColumnCount);
+            Assert.AreEqual(2, table.Rows.Count);
+            Assert.AreEqual(MarkdownTableAlignment.Left, table.Alignments[0]);
+            Assert.AreEqual(MarkdownTableAlignment.Right, table.Alignments[1]);
+            Assert.AreEqual("Alice", table.Rows[0][0].PlainText);
+            Assert.AreEqual("a | b", table.Rows[1][0].PlainText);
+            Assert.AreEqual("x|y", table.Rows[1][1].PlainText);
+        }
     }
 }
