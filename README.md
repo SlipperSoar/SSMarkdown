@@ -28,7 +28,7 @@
 输入：
 
 ```text
-https://github.com/SlipperSoar/SSMarkdown.git#v1.1.1
+https://github.com/SlipperSoar/SSMarkdown.git#v1.1.2
 ```
 
 也可以直接写入项目的 `Packages/manifest.json`：
@@ -36,12 +36,12 @@ https://github.com/SlipperSoar/SSMarkdown.git#v1.1.1
 ```json
 {
   "dependencies": {
-    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.1.1"
+    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.1.2"
   }
 }
 ```
 
-把 `v1.1.1` 换成 `main` 可跟踪主分支最新提交。
+把 `v1.1.2` 换成 `main` 可跟踪主分支最新提交。
 
 > 仓库是 **Private** 的。Unity 通过系统 Git 拉取 Git URL，请先配置 GitHub 凭据（Git Credential Manager 或 SSH key）。如果当前机器没有可用凭据，使用下面的本地安装方式。
 

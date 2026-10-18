@@ -1448,12 +1448,24 @@ namespace SS.UIComponent
                 return 0f;
 
             IList<UILineInfo> lines = generator.lines;
-            float height = 0f;
-            for (int i = 0; i < generator.lineCount; i++)
+            if (generator.lineCount == 1)
+                return lines[0].height / pixelsPerUnit;
+
+            // line.height does not include the extra spacing introduced by
+            // lineSpacing. topY is the actual line origin, so the distance from
+            // the first line top to the last line bottom is the real used height.
+            float top = lines[0].topY;
+            float bottom = lines[generator.lineCount - 1].topY - lines[generator.lineCount - 1].height;
+            float height = Mathf.Abs(top - bottom);
+            if (height <= 0f)
             {
-                height += lines[i].height;
-                if (i > 0)
-                    height += lines[i - 1].leading;
+                height = 0f;
+                for (int i = 0; i < generator.lineCount; i++)
+                {
+                    height += lines[i].height;
+                    if (i > 0)
+                        height += lines[i - 1].leading;
+                }
             }
             return height / pixelsPerUnit;
         }

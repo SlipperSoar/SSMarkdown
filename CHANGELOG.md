@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [1.1.2] - 2026-10-18
+
+### Fixed
+
+- Measure multiline text from the actual line origins (`topY`) so code-block and table backgrounds cover every line when `lineSpacing` is greater than 1.
+
 ## [1.1.1] - 2026-10-18
 
 ### Fixed
