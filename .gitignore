@@ -58,3 +58,9 @@ LinkResults.xml
 
 # Keep the standalone parser test project
 !Tools/ParserTests/ParserTests.csproj
+
+# Machine-specific package manager settings
+ProjectSettings/PackageManagerSettings.asset
+
+# Let each Unity installation resolve against its own registry
+Packages/packages-lock.json
