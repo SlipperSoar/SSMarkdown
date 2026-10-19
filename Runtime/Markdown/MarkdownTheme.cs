@@ -47,6 +47,11 @@ namespace SS.UIComponent
         public Color imageErrorColor = new Color32(207, 34, 46, 255);
         public Color imageErrorBackgroundColor = new Color32(207, 34, 46, 22);
 
+        [Header("Task Lists")]
+        public Color taskCheckboxColor = new Color32(87, 96, 106, 255);
+        public Color taskCheckboxCheckedColor = new Color32(9, 105, 218, 255);
+        public Color taskCheckboxFillColor = new Color32(9, 105, 218, 255);
+
         [Header("Metrics")]
         [Min(0.5f)] public float lineSpacing = 1.18f;
         [Min(0f)] public float paragraphSpacing = 10f;
@@ -68,6 +73,8 @@ namespace SS.UIComponent
         [Min(0f)] public float ruleSpacing = 14f;
         [Min(1f)] public float ruleThickness = 1f;
         [Min(1f)] public float bulletSize = 4f;
+        [Min(8f)] public float taskCheckboxSize = 14f;
+        [Min(1f)] public float taskCheckboxBorderThickness = 1.5f;
         [Range(0.5f, 1.5f)] public float codeFontScale = 0.9f;
         [Range(0.5f, 2f)] public float quoteFontScale = 1f;
 
@@ -113,7 +120,10 @@ namespace SS.UIComponent
                 imageBorderColor = new Color32(110, 118, 129, 130),
                 imageLoadingTextColor = new Color32(139, 148, 158, 255),
                 imageErrorColor = new Color32(255, 123, 114, 255),
-                imageErrorBackgroundColor = new Color32(248, 81, 73, 35)
+                imageErrorBackgroundColor = new Color32(248, 81, 73, 35),
+                taskCheckboxColor = new Color32(139, 148, 158, 255),
+                taskCheckboxCheckedColor = new Color32(88, 166, 255, 255),
+                taskCheckboxFillColor = new Color32(88, 166, 255, 255)
             };
             return theme;
         }
@@ -148,6 +158,9 @@ namespace SS.UIComponent
             imageLoadingTextColor = other.imageLoadingTextColor;
             imageErrorColor = other.imageErrorColor;
             imageErrorBackgroundColor = other.imageErrorBackgroundColor;
+            taskCheckboxColor = other.taskCheckboxColor;
+            taskCheckboxCheckedColor = other.taskCheckboxCheckedColor;
+            taskCheckboxFillColor = other.taskCheckboxFillColor;
 
             lineSpacing = other.lineSpacing;
             paragraphSpacing = other.paragraphSpacing;
@@ -169,6 +182,8 @@ namespace SS.UIComponent
             ruleSpacing = other.ruleSpacing;
             ruleThickness = other.ruleThickness;
             bulletSize = other.bulletSize;
+            taskCheckboxSize = other.taskCheckboxSize;
+            taskCheckboxBorderThickness = other.taskCheckboxBorderThickness;
             codeFontScale = other.codeFontScale;
             quoteFontScale = other.quoteFontScale;
 
@@ -210,6 +225,8 @@ namespace SS.UIComponent
             ruleSpacing = Mathf.Max(0f, ruleSpacing);
             ruleThickness = Mathf.Max(1f, ruleThickness);
             bulletSize = Mathf.Max(1f, bulletSize);
+            taskCheckboxSize = Mathf.Max(8f, taskCheckboxSize);
+            taskCheckboxBorderThickness = Mathf.Max(1f, taskCheckboxBorderThickness);
             codeFontScale = Mathf.Clamp(codeFontScale, 0.5f, 1.5f);
             quoteFontScale = Mathf.Clamp(quoteFontScale, 0.5f, 2f);
         }

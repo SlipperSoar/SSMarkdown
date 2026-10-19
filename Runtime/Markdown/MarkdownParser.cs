@@ -32,6 +32,10 @@ namespace SS.UIComponent
             @"^(?<indent> *)(?<marker>[-+*]|\d{1,9}[.)])(?:(?<spaces>[ \t]+)(?<content>.*)|$)",
             RegexOptions.CultureInvariant);
 
+        private static readonly Regex s_TaskMarker = new Regex(
+            @"^\[(?<state>[ xX])\](?:[ \t]+|$)",
+            RegexOptions.CultureInvariant);
+
         private static readonly Regex s_ClosingHashes = new Regex(
             @"[ \t]+#+[ \t]*$",
             RegexOptions.CultureInvariant);
@@ -562,7 +566,9 @@ namespace SS.UIComponent
             int quoteDepth,
             List<MarkdownBlock> output)
         {
-            var itemLines = new List<string> { marker.Content ?? string.Empty };
+            string firstContent = marker.Content ?? string.Empty;
+            MarkdownTaskState taskState = ExtractTaskState(ref firstContent);
+            var itemLines = new List<string> { firstContent };
             int contentIndent = marker.Indent + marker.Marker.Length + marker.Spaces;
             int i = start + 1;
 
@@ -601,10 +607,23 @@ namespace SS.UIComponent
             block.ListDepth = Math.Min(6, marker.Indent / 2);
             block.IsOrderedList = marker.IsOrdered;
             block.ListNumber = marker.Number;
+            block.TaskState = taskState;
             AddInlines(block, text);
             output.Add(block);
 
             return i;
+        }
+
+        private static MarkdownTaskState ExtractTaskState(ref string content)
+        {
+            Match match = s_TaskMarker.Match(content);
+            if (!match.Success)
+                return MarkdownTaskState.None;
+
+            content = content.Substring(match.Length);
+            return match.Groups["state"].Value == " "
+                ? MarkdownTaskState.Unchecked
+                : MarkdownTaskState.Checked;
         }
 
         private int ParseIndentedCode(

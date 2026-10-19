@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ### Added
 
 - Reference-style links and images, plus footnote references rendered in a trailing footnote section with `onFootnoteClicked`.
+- GFM task-list items with themed checkbox rendering.
 
 ## [1.1.3] - 2026-10-18
 

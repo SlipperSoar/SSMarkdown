@@ -59,6 +59,14 @@ namespace SS.UIComponent
         }
     }
 
+    /// <summary>Task-list state of a list item.</summary>
+    public enum MarkdownTaskState
+    {
+        None,
+        Unchecked,
+        Checked
+    }
+
     /// <summary>A reference-style link definition such as <c>[docs]: https://...</c>.</summary>
     public sealed class MarkdownLinkReference
     {
@@ -228,6 +236,9 @@ namespace SS.UIComponent
 
         /// <summary>Source number of an ordered list item, otherwise 0.</summary>
         public int ListNumber { get; internal set; }
+
+        /// <summary>Task-list state when this list item starts with [ ] or [x].</summary>
+        public MarkdownTaskState TaskState { get; internal set; }
 
         /// <summary>Language recorded after the opening fence of a code block.</summary>
         public string Info { get; internal set; }

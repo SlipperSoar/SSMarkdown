@@ -115,7 +115,7 @@ Demo~/
 
 - [x] GFM 表格解析与列宽排版
 - [x] 引用式链接（reference-style links）与脚注
-- [ ] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
+- [x] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
 - [x] 图片渲染：Resources / AssetBundle 路径、HTTP(S) URL 和加载失败占位
 - [ ] 代码块语言标签与可选的语法高亮接口
 - [ ] 文本选择与复制
@@ -134,6 +134,7 @@ Demo~/
 - **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
 - **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
 - **引用式链接与脚注**：支持 `[text][id]`、短引用 `[id]`、引用图片，以及文档末尾自动汇总的 `[^id]` 脚注。
+- **任务列表**：`- [ ]` / `- [x]` 自动绘制复选框，支持嵌套和主题配色。
 - **图片**：支持 HTTP(S)、Resources 相对路径和 AssetBundle 地址，异步加载并以 RawImage 叠加渲染；失败时显示错误占位。
 - **主题**：内置 Light / Dark 两套配色，切换主题时正文、标题、引用与底板一起更新。
 - **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
@@ -266,6 +267,15 @@ A note[^1].
 
 脚注引用是可点击的，点击后触发 `onFootnoteClicked`，参数为脚注 id。
 
+## 任务列表
+
+```markdown
+- [x] Completed
+- [ ] Pending
+```
+
+复选框由装饰层绘制，颜色可通过 `MarkdownTheme.taskCheckboxColor`、`taskCheckboxCheckedColor` 和 `taskCheckboxFillColor` 调整，尺寸由 `taskCheckboxSize` 控制。
+
 ## Markdown 支持范围
 
 **块级**
@@ -276,6 +286,7 @@ A note[^1].
 - 四空格缩进代码块
 - 引用，可嵌套
 - 有序 / 无序列表，可嵌套
+- 任务列表 `- [ ]` / `- [x]`，带复选框绘制
 - GFM 表格，支持左 / 中 / 右列对齐、单元格内联样式和链接
 - 分隔线
 
@@ -295,7 +306,6 @@ A note[^1].
 
 **有意不支持（见待办）**
 
-- 任务列表
 - 原始 HTML 样式（标签会被忽略，不参与渲染）
 - 语法高亮、表格内嵌图片
 

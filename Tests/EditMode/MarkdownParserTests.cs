@@ -131,5 +131,16 @@ namespace SS.UIComponent.Tests
             Assert.AreEqual(MarkdownBlockType.Footnote, document.Blocks[2].Type);
             Assert.AreEqual(1, document.Blocks[2].FootnoteNumber);
         }
+
+        [Test]
+        public void Parses_task_list_items()
+        {
+            MarkdownDocument document = MarkdownParser.ParseText("- [ ] Todo\n- [x] Done\n- Plain");
+            Assert.AreEqual(MarkdownTaskState.Unchecked, document.Blocks[0].TaskState);
+            Assert.AreEqual("Todo", document.Blocks[0].PlainText);
+            Assert.AreEqual(MarkdownTaskState.Checked, document.Blocks[1].TaskState);
+            Assert.AreEqual("Done", document.Blocks[1].PlainText);
+            Assert.AreEqual(MarkdownTaskState.None, document.Blocks[2].TaskState);
+        }
     }
 }

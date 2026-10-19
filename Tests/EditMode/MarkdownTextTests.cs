@@ -181,6 +181,21 @@ namespace SS.UIComponent.Tests
         }
 
         [Test]
+        public void Renders_task_lists()
+        {
+            m_View.text = "- [ ] Todo\n- [x] Done";
+            Canvas.ForceUpdateCanvases();
+
+            Assert.AreEqual(MarkdownTaskState.Unchecked, m_View.document.Blocks[0].TaskState);
+            Assert.AreEqual(MarkdownTaskState.Checked, m_View.document.Blocks[1].TaskState);
+            Assert.Greater(m_View.contentHeight, 0f);
+
+            Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();
+            Assert.IsNotNull(mesh);
+            Assert.Greater(mesh.vertexCount, 0);
+        }
+
+        [Test]
         public void Empty_text_has_zero_height()
         {
             m_View.text = string.Empty;

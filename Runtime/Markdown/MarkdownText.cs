@@ -1005,12 +1005,17 @@ namespace SS.UIComponent
             float markerArea = 0f;
             string orderedMarker = null;
             bool isFootnote = block.Type == MarkdownBlockType.Footnote;
+            bool isTask = isListItem && block.TaskState != MarkdownTaskState.None;
             int listSize = Mathf.Max(1, Mathf.RoundToInt(m_FontSize * (block.QuoteDepth > 0 ? theme.quoteFontScale : 1f)));
 
             if (isListItem || isFootnote)
             {
                 markerArea = theme.listIndent;
-                if (isFootnote)
+                if (isTask)
+                {
+                    markerArea = Mathf.Max(markerArea, theme.taskCheckboxSize + theme.listMarkerGap);
+                }
+                else if (isFootnote)
                 {
                     orderedMarker = "[" + block.FootnoteNumber + "]";
                     float markerWidth = MeasureMarkerWidth(orderedMarker, listSize, pixelsPerUnit);
@@ -1059,7 +1064,12 @@ namespace SS.UIComponent
 
             float totalHeight = textHeight;
 
-            if ((isListItem || isFootnote) && !string.IsNullOrEmpty(orderedMarker))
+            if (isTask)
+            {
+                float lineHeight = size * theme.lineSpacing;
+                DrawTaskCheckbox(result, block, left, top, lineHeight);
+            }
+            else if ((isListItem || isFootnote) && !string.IsNullOrEmpty(orderedMarker))
             {
                 MarkdownRichText markerRich = MarkdownRichTextBuilder.BuildPlainText(orderedMarker);
                 TextGenerationSettings markerSettings = CreateSettings(
@@ -1090,6 +1100,37 @@ namespace SS.UIComponent
 
             AddQuoteBars(result, block, top, totalHeight);
             return totalHeight;
+        }
+
+        private void DrawTaskCheckbox(
+            LayoutResult result,
+            MarkdownBlock block,
+            float left,
+            float top,
+            float lineHeight)
+        {
+            float size = Mathf.Max(8f, theme.taskCheckboxSize);
+            float x = left + theme.listMarkerGap * 0.5f;
+            float y = top + Mathf.Max(0f, (lineHeight - size) * 0.5f);
+            float thickness = Mathf.Max(1f, theme.taskCheckboxBorderThickness);
+            Color color = ThemeColor(block.TaskState == MarkdownTaskState.Checked
+                ? theme.taskCheckboxCheckedColor
+                : theme.taskCheckboxColor);
+
+            AddSolidNormalized(result, new Rect(x, -y - thickness, size, thickness), color);
+            AddSolidNormalized(result, new Rect(x, -y - size, size, thickness), color);
+            AddSolidNormalized(result, new Rect(x, -y - size, thickness, size), color);
+            AddSolidNormalized(result, new Rect(x + size - thickness, -y - size, thickness, size), color);
+
+            if (block.TaskState == MarkdownTaskState.Checked)
+            {
+                float inset = thickness + 2.5f;
+                float inner = Mathf.Max(1f, size - inset * 2f);
+                AddSolidNormalized(
+                    result,
+                    new Rect(x + inset, -y - size + inset, inner, inner),
+                    ThemeColor(theme.taskCheckboxFillColor));
+            }
         }
 
         private float BuildCodeBlock(

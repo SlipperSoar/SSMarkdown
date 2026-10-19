@@ -24,6 +24,7 @@ internal static class Program
         TestNestedFormatting();
         TestTables();
         TestReferenceLinksAndFootnotes();
+        TestTaskLists();
 
         Console.WriteLine();
         Console.WriteLine("Passed: " + s_Passed + "  Failed: " + s_Failed);
@@ -185,6 +186,18 @@ internal static class Program
         AssertEqual(MarkdownBlockType.Image, imageDoc.Blocks[0].Type, "reference image type");
         AssertEqual("logo.png", imageDoc.Blocks[0].ImageUrl, "reference image url");
         AssertEqual("alt", imageDoc.Blocks[0].ImageAlt, "reference image alt");
+    }
+
+    private static void TestTaskLists()
+    {
+        var doc = MarkdownParser.ParseText("- [ ] Todo\n- [x] Done\n- [X] Also done\n- Normal");
+        AssertEqual(4, doc.Blocks.Count, "task list item count");
+        AssertEqual(MarkdownTaskState.Unchecked, doc.Blocks[0].TaskState, "unchecked task");
+        AssertEqual("Todo", doc.Blocks[0].PlainText, "unchecked task text");
+        AssertEqual(MarkdownTaskState.Checked, doc.Blocks[1].TaskState, "checked task");
+        AssertEqual("Done", doc.Blocks[1].PlainText, "checked task text");
+        AssertEqual(MarkdownTaskState.Checked, doc.Blocks[2].TaskState, "uppercase checked task");
+        AssertEqual(MarkdownTaskState.None, doc.Blocks[3].TaskState, "normal list item");
     }
 
     private static void AssertTrue(bool condition, string name)

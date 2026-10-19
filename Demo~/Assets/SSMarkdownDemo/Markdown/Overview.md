@@ -59,6 +59,12 @@ public class ReadmePanel : MonoBehaviour
 1. Ordered lists keep their source numbers
 2. The marker column is measured from the font
 
+Task lists render checkboxes:
+
+- [x] Parse tables
+- [x] Render images
+- [ ] Add language highlighters
+
 ## Quotes
 
 > Good runtime documentation should be readable without leaving the game.

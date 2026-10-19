@@ -11,6 +11,7 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 - Indented code blocks
 - Block quotes, including nested quotes
 - Ordered and unordered lists, including nested items
+- Task lists such as `- [ ]` and `- [x]`
 - GFM tables with left, center and right alignment
 - Thematic breaks with `---`, `***` or `___`
 
@@ -29,7 +30,14 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 
 ## Not implemented
 
-Task lists, raw HTML styling and syntax highlighting are intentionally out of scope.
+Raw HTML styling and syntax highlighting are intentionally out of scope.
+
+## Task lists
+
+```markdown
+- [x] Completed item
+- [ ] Pending item
+```
 
 ## References and footnotes
 
