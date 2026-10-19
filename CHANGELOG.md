@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [1.2.1] - 2026-10-19
+
+### Fixed
+
+- Defer `SetVerticesDirty` / `SetLayoutDirty` when a font texture rebuild callback fires during an existing UGUI layout or graphic rebuild loop. This removes the startup error about adding MarkdownText for graphic rebuild while already rebuilding.
+
 ## [1.2.0] - 2026-10-19
 
 ### Added

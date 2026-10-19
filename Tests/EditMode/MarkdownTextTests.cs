@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using SS.UIComponent;
 using UnityEngine;
@@ -196,6 +197,23 @@ namespace SS.UIComponent.Tests
         }
 
         [Test]
+        public void Defers_dirty_callbacks_during_graphic_rebuild()
+        {
+            var probe = new RebuildProbe(m_View);
+            CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(probe);
+            try
+            {
+                Canvas.ForceUpdateCanvases();
+            }
+            finally
+            {
+                CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(probe);
+            }
+
+            Assert.Pass("MarkDirty was deferred without registering a nested graphic rebuild.");
+        }
+
+        [Test]
         public void Accepts_custom_syntax_highlighters()
         {
             m_View.codeHighlighter = new TestHighlighter();
@@ -206,6 +224,42 @@ namespace SS.UIComponent.Tests
             Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();
             Assert.IsNotNull(mesh);
             Assert.Greater(mesh.vertexCount, 0);
+        }
+
+        private sealed class RebuildProbe : ICanvasElement
+        {
+            private readonly MarkdownText m_View;
+
+            public RebuildProbe(MarkdownText view)
+            {
+                m_View = view;
+            }
+
+            public void Rebuild(CanvasUpdate executing)
+            {
+                if (executing != CanvasUpdate.PreRender || m_View == null)
+                    return;
+
+                MethodInfo markDirty = typeof(MarkdownText).GetMethod(
+                    "MarkDirty",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                markDirty.Invoke(m_View, null);
+            }
+
+            public void LayoutComplete()
+            {
+            }
+
+            public void GraphicUpdateComplete()
+            {
+            }
+
+            public bool IsDestroyed()
+            {
+                return m_View == null;
+            }
+
+            public Transform transform => m_View.transform;
         }
 
         private sealed class TestHighlighter : IMarkdownSyntaxHighlighter

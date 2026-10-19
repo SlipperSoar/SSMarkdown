@@ -1,6 +1,6 @@
 {
   "name": "com.ssmarkdown",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "displayName": "SSMarkdown",
   "description": "Runtime Markdown rendering for Unity UGUI. A Text-like MarkdownText component with tables, images, reference links, footnotes, task lists and a syntax-highlighting interface.",
   "unity": "2022.3",

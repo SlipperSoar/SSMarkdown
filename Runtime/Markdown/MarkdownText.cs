@@ -55,6 +55,7 @@ namespace SS.UIComponent
         [NonSerialized] private List<MarkdownSolidRect> m_PendingSolids;
         [NonSerialized] private bool m_DisableFontTextureRebuiltCallback;
         [NonSerialized] private bool m_BuildingLayout;
+        [NonSerialized] private bool m_DirtyPending;
         [NonSerialized] private IMarkdownSyntaxHighlighter m_CodeHighlighter;
         [NonSerialized] private bool m_SyncingDecoration;
 
@@ -438,6 +439,15 @@ namespace SS.UIComponent
             }
 
             SyncImagePlacements();
+
+            if (m_DirtyPending &&
+                !CanvasUpdateRegistry.IsRebuildingGraphics() &&
+                !CanvasUpdateRegistry.IsRebuildingLayout())
+            {
+                m_DirtyPending = false;
+                SetVerticesDirty();
+                SetLayoutDirty();
+            }
         }
 
         protected override void OnTransformParentChanged()
@@ -510,6 +520,18 @@ namespace SS.UIComponent
         {
             m_LayoutDirty = true;
             m_Layout = null;
+
+            // Font texture rebuild callbacks and layout-time callbacks can fire
+            // while UGUI is already walking its rebuild queues. Registering a new
+            // rebuild there logs an error and is unsupported, so defer it until
+            // the next LateUpdate.
+            if (CanvasUpdateRegistry.IsRebuildingGraphics() ||
+                CanvasUpdateRegistry.IsRebuildingLayout())
+            {
+                m_DirtyPending = true;
+                return;
+            }
+
             SetVerticesDirty();
             SetLayoutDirty();
         }

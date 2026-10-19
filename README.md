@@ -8,7 +8,7 @@
 [![UPM](https://img.shields.io/badge/UPM-com.ssmarkdown-2b6cb0)](https://github.com/SlipperSoar/SSMarkdown)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
-> 当前版本 **1.2.0**，核心渲染能力已经完成。后续计划见 [待办事项](#待办事项)。
+> 当前版本 **1.2.1**，核心渲染能力已经完成。后续计划见 [待办事项](#待办事项)。
 
 ![SSMarkdown demo](Documentation~/demo-preview.png)
 
@@ -34,7 +34,7 @@
 输入：
 
 ```text
-https://github.com/SlipperSoar/SSMarkdown.git#v1.2.0
+https://github.com/SlipperSoar/SSMarkdown.git#v1.2.1
 ```
 
 也可以直接写入项目的 `Packages/manifest.json`：
@@ -42,12 +42,12 @@ https://github.com/SlipperSoar/SSMarkdown.git#v1.2.0
 ```json
 {
   "dependencies": {
-    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.2.0"
+    "com.ssmarkdown": "https://github.com/SlipperSoar/SSMarkdown.git#v1.2.1"
   }
 }
 ```
 
-把 `v1.2.0` 换成 `main` 可跟踪主分支最新提交。
+把 `v1.2.1` 换成 `main` 可跟踪主分支最新提交。
 
 > 仓库是公开的，Git URL 可以直接安装。如果当前网络无法访问 GitHub，可使用下面的本地安装方式，或在 Package Manager 中指定代理。
 
