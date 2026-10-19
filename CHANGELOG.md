@@ -8,6 +8,7 @@ All notable changes to this project are documented here.
 
 - Reference-style links and images, plus footnote references rendered in a trailing footnote section with `onFootnoteClicked`.
 - GFM task-list items with themed checkbox rendering.
+- `IMarkdownSyntaxHighlighter` / `MarkdownHighlightSpan` interface for custom code-block highlighting (no language implementations bundled).
 
 ## [1.1.3] - 2026-10-18
 

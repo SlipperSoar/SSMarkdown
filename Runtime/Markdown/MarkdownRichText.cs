@@ -155,6 +155,54 @@ namespace SS.UIComponent
             return new MarkdownRichText(markup.ToString(), ranges, visible);
         }
 
+        public static MarkdownRichText BuildHighlightedText(
+            string text,
+            IReadOnlyList<MarkdownHighlightSpan> spans,
+            Color baseColor)
+        {
+            text = text ?? string.Empty;
+            var colors = new Color[text.Length];
+            for (int i = 0; i < colors.Length; i++)
+                colors[i] = baseColor;
+
+            if (spans != null)
+            {
+                for (int s = 0; s < spans.Count; s++)
+                {
+                    MarkdownHighlightSpan span = spans[s];
+                    int start = Mathf.Clamp(span.Start, 0, text.Length);
+                    int end = Mathf.Clamp(span.End, start, text.Length);
+                    for (int i = start; i < end; i++)
+                        colors[i] = span.Color;
+                }
+            }
+
+            var markup = new StringBuilder(text.Length + 32);
+            var visible = new List<int>(text.Length);
+            var ranges = new List<MarkdownRichText.Range>();
+
+            int index = 0;
+            while (index < text.Length)
+            {
+                Color color = colors[index];
+                int end = index + 1;
+                while (end < text.Length && colors[end] == color)
+                    end++;
+
+                int start = markup.Length;
+                markup.Append("<color=#").Append(ColorUtility.ToHtmlStringRGBA(color)).Append('>');
+                AppendEscaped(markup, text.Substring(index, end - index), visible, 0, true);
+                markup.Append("</color>");
+                ranges.Add(new MarkdownRichText.Range(start, markup.Length, 0));
+                index = end;
+            }
+
+            if (ranges.Count == 0)
+                ranges.Add(new MarkdownRichText.Range(0, 0, 0));
+
+            return new MarkdownRichText(markup.ToString(), ranges, visible);
+        }
+
         private static void AppendEscaped(
             StringBuilder markup,
             string text,

@@ -117,7 +117,8 @@ Demo~/
 - [x] 引用式链接（reference-style links）与脚注
 - [x] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
 - [x] 图片渲染：Resources / AssetBundle 路径、HTTP(S) URL 和加载失败占位
-- [ ] 代码块语言标签与可选的语法高亮接口
+- [x] 语法高亮接口（不含具体语言实现）
+- [ ] 代码块语言标签
 - [ ] 文本选择与复制
 - [ ] 链接 hover 光标、hover 高亮和键盘导航
 - [ ] 中日韩字体的自动回退与更精确的断行规则
@@ -135,6 +136,7 @@ Demo~/
 - **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
 - **引用式链接与脚注**：支持 `[text][id]`、短引用 `[id]`、引用图片，以及文档末尾自动汇总的 `[^id]` 脚注。
 - **任务列表**：`- [ ]` / `- [x]` 自动绘制复选框，支持嵌套和主题配色。
+- **语法高亮接口**：通过 `IMarkdownSyntaxHighlighter` 返回颜色区间；包内不附带具体语言实现。
 - **图片**：支持 HTTP(S)、Resources 相对路径和 AssetBundle 地址，异步加载并以 RawImage 叠加渲染；失败时显示错误占位。
 - **主题**：内置 Light / Dark 两套配色，切换主题时正文、标题、引用与底板一起更新。
 - **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
@@ -156,6 +158,7 @@ Demo~/
 | `bool enableLinks` | 是否启用链接命中与事件。 |
 | `MarkdownLinkEvent onLinkClicked` | 链接点击事件，参数为 URL。 |
 | `MarkdownLinkEvent onFootnoteClicked` | 脚注引用点击事件，参数为脚注 id。 |
+| `IMarkdownSyntaxHighlighter codeHighlighter` | 运行时赋值；返回代码块的颜色区间。 |
 | `float maxImageWidth` | 图片最大宽度；0 表示使用可用内容宽度。 |
 | `float maxImageHeight` | 图片最大高度；0 表示不限制。 |
 | `MarkdownImageLoader imageLoader` | 自定义图片加载器；为 null 时使用内置 HTTP / Resources / AssetBundle 加载。 |
@@ -276,6 +279,36 @@ A note[^1].
 
 复选框由装饰层绘制，颜色可通过 `MarkdownTheme.taskCheckboxColor`、`taskCheckboxCheckedColor` 和 `taskCheckboxFillColor` 调整，尺寸由 `taskCheckboxSize` 控制。
 
+## 语法高亮接口
+
+包内只定义接口，不包含任何语言实现：
+
+```csharp
+public interface IMarkdownSyntaxHighlighter
+{
+    IReadOnlyList<MarkdownHighlightSpan> Highlight(string language, string code);
+}
+```
+
+`MarkdownHighlightSpan` 使用 UTF-16 索引和 `Color` 前景色。重叠区间按返回顺序覆盖；返回 null 或空列表时使用主题默认代码颜色。
+
+运行时接入：
+
+```csharp
+public sealed class MyHighlighter : IMarkdownSyntaxHighlighter
+{
+    public IReadOnlyList<MarkdownHighlightSpan> Highlight(string language, string code)
+    {
+        // 这里接入你自己的词法分析器，返回若干 MarkdownHighlightSpan 即可。
+        return System.Array.Empty<MarkdownHighlightSpan>();
+    }
+}
+
+markdown.codeHighlighter = new MyHighlighter();
+```
+
+语言标签目前仅作为 `language` 参数传入，不会自动显示在代码块标题中。
+
 ## Markdown 支持范围
 
 **块级**
@@ -307,7 +340,7 @@ A note[^1].
 **有意不支持（见待办）**
 
 - 原始 HTML 样式（标签会被忽略，不参与渲染）
-- 语法高亮、表格内嵌图片
+- 内置语言高亮实现、代码块标题栏、表格内嵌图片
 
 解析器对未知结构采取“退化为普通文本”的策略，不会在运行时抛异常。
 

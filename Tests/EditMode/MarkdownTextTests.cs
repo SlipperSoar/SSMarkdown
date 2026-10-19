@@ -196,6 +196,31 @@ namespace SS.UIComponent.Tests
         }
 
         [Test]
+        public void Accepts_custom_syntax_highlighters()
+        {
+            m_View.codeHighlighter = new TestHighlighter();
+            m_View.text = "```csharp\nvar x = 1; // <color=#fff>\n```";
+            Canvas.ForceUpdateCanvases();
+
+            Assert.Greater(m_View.contentHeight, 0f);
+            Mesh mesh = m_View.GetComponent<CanvasRenderer>().GetMesh();
+            Assert.IsNotNull(mesh);
+            Assert.Greater(mesh.vertexCount, 0);
+        }
+
+        private sealed class TestHighlighter : IMarkdownSyntaxHighlighter
+        {
+            public System.Collections.Generic.IReadOnlyList<MarkdownHighlightSpan> Highlight(string language, string code)
+            {
+                return new[]
+                {
+                    new MarkdownHighlightSpan(0, 3, Color.blue),
+                    new MarkdownHighlightSpan(code.Length - 1, 1, Color.red)
+                };
+            }
+        }
+
+        [Test]
         public void Empty_text_has_zero_height()
         {
             m_View.text = string.Empty;

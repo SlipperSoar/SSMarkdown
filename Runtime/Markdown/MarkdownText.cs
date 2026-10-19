@@ -55,6 +55,7 @@ namespace SS.UIComponent
         [NonSerialized] private List<MarkdownSolidRect> m_PendingSolids;
         [NonSerialized] private bool m_DisableFontTextureRebuiltCallback;
         [NonSerialized] private bool m_BuildingLayout;
+        [NonSerialized] private IMarkdownSyntaxHighlighter m_CodeHighlighter;
         [NonSerialized] private bool m_SyncingDecoration;
 
         private static Font s_DefaultFont;
@@ -163,6 +164,19 @@ namespace SS.UIComponent
                 if (m_EnableLinks == value)
                     return;
                 m_EnableLinks = value;
+                MarkDirty();
+            }
+        }
+
+        /// <summary>Optional syntax highlighter for fenced code blocks.</summary>
+        public IMarkdownSyntaxHighlighter codeHighlighter
+        {
+            get => m_CodeHighlighter;
+            set
+            {
+                if (ReferenceEquals(m_CodeHighlighter, value))
+                    return;
+                m_CodeHighlighter = value;
                 MarkDirty();
             }
         }
@@ -1148,13 +1162,29 @@ namespace SS.UIComponent
             if (code.EndsWith("\n", StringComparison.Ordinal))
                 code = code.Substring(0, code.Length - 1);
 
-            MarkdownRichText rich = MarkdownRichTextBuilder.BuildPlainText(code, false);
+            IReadOnlyList<MarkdownHighlightSpan> highlightSpans = null;
+            if (m_CodeHighlighter != null)
+            {
+                try
+                {
+                    highlightSpans = m_CodeHighlighter.Highlight(block.Info, code);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning("[SSMarkdown] Syntax highlighter failed: " + exception.Message, this);
+                }
+            }
+
+            bool highlighted = highlightSpans != null && highlightSpans.Count > 0;
+            MarkdownRichText rich = highlighted
+                ? MarkdownRichTextBuilder.BuildHighlightedText(code, highlightSpans, ThemeColor(theme.codeBlockTextColor))
+                : MarkdownRichTextBuilder.BuildPlainText(code, false);
             TextGenerationSettings settings = CreateSettings(
                 size,
                 innerWidth,
                 TextAnchor.UpperLeft,
                 ThemeColor(theme.codeBlockTextColor),
-                false);
+                highlighted);
             settings.lineSpacing = theme.lineSpacing;
 
             m_Generator.Populate(rich.Markup, settings);

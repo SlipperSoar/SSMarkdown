@@ -83,6 +83,12 @@ namespace SS.UIComponent.Editor
                 MessageType.None);
 
             EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Code", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Assign codeHighlighter at runtime with an IMarkdownSyntaxHighlighter implementation. No language highlighter is bundled.",
+                MessageType.None);
+
+            EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Links", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_EnableLinks);
             EditorGUILayout.PropertyField(m_OnLinkClicked);
