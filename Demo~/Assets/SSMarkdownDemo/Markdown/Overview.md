@@ -76,6 +76,11 @@ view.onLinkClicked.AddListener(url => Debug.Log(url));
 
 Visit <https://unity.com> or click [the API documentation](https://example.com/docs).
 
-Image syntax is supported as its alt text: ![SSMarkdown logo](logo.png).
+Reference-style links work too: [the Unity manual][manual].
+
+Images can be loaded from Resources, AssetBundles or HTTP(S) URLs. A footnote reference[^note] is collected at the bottom of the document.
 
 The end.
+
+[manual]: https://docs.unity3d.com/Manual/
+[^note]: Footnotes support **inline formatting** and are rendered after a separator.

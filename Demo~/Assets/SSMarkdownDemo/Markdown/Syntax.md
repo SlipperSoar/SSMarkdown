@@ -21,13 +21,24 @@ SSMarkdown implements the documentation-oriented subset below. Anything outside 
 - ~~Strikethrough~~ with `~~`
 - `Inline code` with backticks
 - [Links](https://example.com) with an optional title
+- Reference links such as `[text][id]` and `[id]`
+- Footnotes such as `a note[^1]`
 - Autolinks such as <https://unity.com>
 - Bare URLs such as https://docs.unity3d.com
 - Backslash escapes and common HTML entities
 
 ## Not implemented
 
-Footnotes, reference-style links, task lists, raw HTML styling and syntax highlighting are intentionally out of scope.
+Task lists, raw HTML styling and syntax highlighting are intentionally out of scope.
+
+## References and footnotes
+
+```markdown
+Read [the docs][docs] and a note[^1].
+
+[docs]: https://example.com/docs
+[^1]: Footnotes are rendered at the end of the document.
+```
 
 ## Images
 

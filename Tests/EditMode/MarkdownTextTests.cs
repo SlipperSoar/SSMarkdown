@@ -169,6 +169,18 @@ namespace SS.UIComponent.Tests
         }
 
         [Test]
+        public void Renders_footnotes()
+        {
+            m_View.text = "A note[^n].\n\n[^n]: Footnote text.";
+            Canvas.ForceUpdateCanvases();
+
+            Assert.Greater(m_View.contentHeight, 0f);
+            Assert.IsTrue(m_View.document.Blocks.Any(b => b.Type == MarkdownBlockType.Footnote));
+            Assert.IsTrue(m_View.document.Blocks[0].Inlines.Any(
+                s => (s.Style & MarkdownInlineStyle.Footnote) != 0));
+        }
+
+        [Test]
         public void Empty_text_has_zero_height()
         {
             m_View.text = string.Empty;

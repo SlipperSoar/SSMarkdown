@@ -113,5 +113,23 @@ namespace SS.UIComponent.Tests
             Assert.AreEqual("resources://SSMarkdownLogo", document.Blocks[1].ImageUrl);
             Assert.AreEqual("after", document.Blocks[2].PlainText);
         }
+
+        [Test]
+        public void Parses_reference_links_and_footnotes()
+        {
+            MarkdownDocument document = MarkdownParser.ParseText(
+                "[docs]: https://example.com/docs \"Documentation\"\n\n" +
+                "Read [the docs][docs] and a note[^n].\n\n" +
+                "[^n]: Footnote with **bold** text.");
+
+            Assert.AreEqual(1, document.LinkReferences.Count);
+            Assert.AreEqual(3, document.Blocks.Count);
+            Assert.IsTrue(document.Blocks[0].Inlines.Any(s => s.Url == "https://example.com/docs"));
+            Assert.IsTrue(document.Blocks[0].Inlines.Any(
+                s => s.Text == "[1]" && (s.Style & MarkdownInlineStyle.Footnote) != 0));
+            Assert.AreEqual(MarkdownBlockType.ThematicBreak, document.Blocks[1].Type);
+            Assert.AreEqual(MarkdownBlockType.Footnote, document.Blocks[2].Type);
+            Assert.AreEqual(1, document.Blocks[2].FootnoteNumber);
+        }
     }
 }

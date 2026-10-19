@@ -16,13 +16,13 @@ namespace SS.UIComponent
             @"^/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*)?/?$",
             RegexOptions.CultureInvariant);
 
-        public static List<MarkdownInline> Parse(string text)
+        public static List<MarkdownInline> Parse(string text, MarkdownInlineContext context = null)
         {
             var output = new List<MarkdownInline>();
             if (string.IsNullOrEmpty(text))
                 return output;
 
-            ParseRange(text, 0, text.Length, MarkdownInlineStyle.None, null, true, output);
+            ParseRange(text, 0, text.Length, MarkdownInlineStyle.None, null, true, output, context);
             return output;
         }
 
@@ -33,7 +33,8 @@ namespace SS.UIComponent
             MarkdownInlineStyle style,
             string url,
             bool allowLinks,
-            List<MarkdownInline> output)
+            List<MarkdownInline> output,
+            MarkdownInlineContext context)
         {
             var buffer = new StringBuilder();
             int i = start;
@@ -79,11 +80,12 @@ namespace SS.UIComponent
 
                 if (c == '!' && i + 1 < end && text[i + 1] == '[' && allowLinks)
                 {
-                    if (TryParseLink(text, i + 1, end, out int labelStart, out int labelEnd, out int afterLink, out string imageUrl))
+                    if (TryParseLink(text, i + 1, end, out int labelStart, out int labelEnd, out int afterLink, out string imageUrl) ||
+                        TryParseReferenceLink(text, i + 1, end, context, out labelStart, out labelEnd, out afterLink, out imageUrl))
                     {
                         Flush(buffer, style, url, false, output);
                         int firstImageSpan = output.Count;
-                        ParseRange(text, labelStart, labelEnd, style | MarkdownInlineStyle.Link, imageUrl, false, output);
+                        ParseRange(text, labelStart, labelEnd, style | MarkdownInlineStyle.Link, imageUrl, false, output, context);
                         if (labelEnd == labelStart && !string.IsNullOrEmpty(imageUrl))
                             AddSpan(output, imageUrl, style | MarkdownInlineStyle.Link, imageUrl, true);
 
@@ -97,10 +99,33 @@ namespace SS.UIComponent
 
                 if (c == '[' && allowLinks)
                 {
-                    if (TryParseLink(text, i, end, out int labelStart, out int labelEnd, out int afterLink, out string linkUrl))
+                    if (c == '[' && i + 1 < end && text[i + 1] == '^' && context != null)
+                    {
+                        int footnoteClose = FindClosingBracket(text, i, end);
+                        if (footnoteClose > i + 2)
+                        {
+                            string footnoteId = MarkdownLinkReference.NormalizeLabel(
+                                text.Substring(i + 2, footnoteClose - i - 2));
+                            if (context.TryGetFootnoteNumber(footnoteId, out int footnoteNumber))
+                            {
+                                Flush(buffer, style, url, false, output);
+                                AddSpan(
+                                    output,
+                                    "[" + footnoteNumber + "]",
+                                    style | MarkdownInlineStyle.Footnote,
+                                    "#footnote-" + footnoteId,
+                                    false);
+                                i = footnoteClose + 1;
+                                continue;
+                            }
+                        }
+                    }
+
+                    if (TryParseLink(text, i, end, out int labelStart, out int labelEnd, out int afterLink, out string linkUrl) ||
+                        TryParseReferenceLink(text, i, end, context, out labelStart, out labelEnd, out afterLink, out linkUrl))
                     {
                         Flush(buffer, style, url, false, output);
-                        ParseRange(text, labelStart, labelEnd, style | MarkdownInlineStyle.Link, linkUrl, false, output);
+                        ParseRange(text, labelStart, labelEnd, style | MarkdownInlineStyle.Link, linkUrl, false, output, context);
                         if (labelEnd == labelStart && !string.IsNullOrEmpty(linkUrl))
                             AddSpan(output, linkUrl, style | MarkdownInlineStyle.Link, linkUrl, false);
                         i = afterLink;
@@ -161,7 +186,7 @@ namespace SS.UIComponent
                     if (close > i + 2)
                     {
                         Flush(buffer, style, url, false, output);
-                        ParseRange(text, i + 2, close, style | MarkdownInlineStyle.Strikethrough, url, allowLinks, output);
+                        ParseRange(text, i + 2, close, style | MarkdownInlineStyle.Strikethrough, url, allowLinks, output, context);
                         i = close + 2;
                         continue;
                     }
@@ -181,7 +206,7 @@ namespace SS.UIComponent
                     if (close > i + used)
                     {
                         Flush(buffer, style, url, false, output);
-                        ParseRange(text, i + used, close, style | emphasisStyle, url, allowLinks, output);
+                        ParseRange(text, i + used, close, style | emphasisStyle, url, allowLinks, output, context);
                         i = close + used;
                         continue;
                     }
@@ -401,6 +426,82 @@ namespace SS.UIComponent
                 default:
                     return false;
             }
+        }
+
+        private static bool TryParseReferenceLink(
+            string text,
+            int openBracket,
+            int end,
+            MarkdownInlineContext context,
+            out int labelStart,
+            out int labelEnd,
+            out int after,
+            out string url)
+        {
+            labelStart = 0;
+            labelEnd = 0;
+            after = 0;
+            url = null;
+
+            if (context == null || openBracket >= end || text[openBracket] != '[')
+                return false;
+
+            int closeBracket = FindClosingBracket(text, openBracket, end);
+            if (closeBracket < 0)
+                return false;
+
+            int next = closeBracket + 1;
+            string referenceLabel;
+            if (next < end && text[next] == '[')
+            {
+                int closeReference = FindClosingBracket(text, next, end);
+                if (closeReference < 0)
+                    return false;
+
+                referenceLabel = text.Substring(next + 1, closeReference - next - 1);
+                if (referenceLabel.Length == 0)
+                    referenceLabel = text.Substring(openBracket + 1, closeBracket - openBracket - 1);
+                after = closeReference + 1;
+            }
+            else
+            {
+                referenceLabel = text.Substring(openBracket + 1, closeBracket - openBracket - 1);
+                after = closeBracket + 1;
+            }
+
+            if (!context.TryGetReference(referenceLabel, out MarkdownLinkReference reference))
+                return false;
+
+            labelStart = openBracket + 1;
+            labelEnd = closeBracket;
+            url = reference.Url;
+            return true;
+        }
+
+        private static int FindClosingBracket(string text, int openBracket, int end)
+        {
+            int depth = 0;
+            for (int i = openBracket; i < end; i++)
+            {
+                char c = text[i];
+                if (c == '\\')
+                {
+                    i++;
+                    continue;
+                }
+
+                if (c == '[')
+                {
+                    depth++;
+                }
+                else if (c == ']')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return i;
+                }
+            }
+            return -1;
         }
 
         private static bool TryParseLink(

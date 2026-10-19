@@ -31,6 +31,7 @@ namespace SS.UIComponent
         [SerializeField, Min(0f)] private float m_MaxImageWidth = 0f;
         [SerializeField, Min(0f)] private float m_MaxImageHeight = 480f;
         [SerializeField] private MarkdownLinkEvent m_OnLinkClicked = new MarkdownLinkEvent();
+        [SerializeField] private MarkdownLinkEvent m_OnFootnoteClicked = new MarkdownLinkEvent();
 
         [NonSerialized] private MarkdownDocument m_Document;
         [NonSerialized] private bool m_DocumentDirty = true;
@@ -63,6 +64,13 @@ namespace SS.UIComponent
         {
             get => m_OnLinkClicked;
             set => m_OnLinkClicked = value ?? new MarkdownLinkEvent();
+        }
+
+        /// <summary>Raised when a footnote reference is clicked. The argument is the footnote id.</summary>
+        public MarkdownLinkEvent onFootnoteClicked
+        {
+            get => m_OnFootnoteClicked;
+            set => m_OnFootnoteClicked = value ?? new MarkdownLinkEvent();
         }
 
         /// <summary>Markdown source. Assigning a new value triggers a reparse and relayout.</summary>
@@ -310,7 +318,12 @@ namespace SS.UIComponent
                 return;
 
             string url = GetLinkAtScreenPosition(eventData.position, eventData.pressEventCamera);
-            if (!string.IsNullOrEmpty(url))
+            if (string.IsNullOrEmpty(url))
+                return;
+
+            if (url.StartsWith("#footnote-", StringComparison.Ordinal))
+                m_OnFootnoteClicked.Invoke(url.Substring("#footnote-".Length));
+            else
                 m_OnLinkClicked.Invoke(url);
         }
 
@@ -603,6 +616,8 @@ namespace SS.UIComponent
                     return BuildTable(result, block, top, availableWidth, pixelsPerUnit);
                 case MarkdownBlockType.Image:
                     return BuildImageBlock(result, block, top, availableWidth, pixelsPerUnit);
+                case MarkdownBlockType.Footnote:
+                    return BuildFlowBlock(result, block, top, availableWidth, pixelsPerUnit, false);
                 case MarkdownBlockType.ThematicBreak:
                     AddSolidNormalized(
                         result,
@@ -989,12 +1004,19 @@ namespace SS.UIComponent
             float left = block.QuoteDepth * theme.quoteIndent + block.ListDepth * theme.listIndent;
             float markerArea = 0f;
             string orderedMarker = null;
+            bool isFootnote = block.Type == MarkdownBlockType.Footnote;
             int listSize = Mathf.Max(1, Mathf.RoundToInt(m_FontSize * (block.QuoteDepth > 0 ? theme.quoteFontScale : 1f)));
 
-            if (isListItem)
+            if (isListItem || isFootnote)
             {
                 markerArea = theme.listIndent;
-                if (block.IsOrderedList)
+                if (isFootnote)
+                {
+                    orderedMarker = "[" + block.FootnoteNumber + "]";
+                    float markerWidth = MeasureMarkerWidth(orderedMarker, listSize, pixelsPerUnit);
+                    markerArea = Mathf.Max(markerArea, markerWidth + theme.listMarkerGap);
+                }
+                else if (block.IsOrderedList)
                 {
                     orderedMarker = block.ListNumber.ToString() + ".";
                     float markerWidth = MeasureMarkerWidth(orderedMarker, listSize, pixelsPerUnit);
@@ -1037,36 +1059,33 @@ namespace SS.UIComponent
 
             float totalHeight = textHeight;
 
-            if (isListItem)
+            if ((isListItem || isFootnote) && !string.IsNullOrEmpty(orderedMarker))
             {
-                if (block.IsOrderedList && !string.IsNullOrEmpty(orderedMarker))
-                {
-                    MarkdownRichText markerRich = MarkdownRichTextBuilder.BuildPlainText(orderedMarker);
-                    TextGenerationSettings markerSettings = CreateSettings(
-                        size,
-                        Mathf.Max(1f, markerArea),
-                        TextAnchor.UpperLeft,
-                        ThemeColor(theme.listMarkerColor));
-                    m_MarkerGenerator.Populate(markerRich.Markup, markerSettings);
-                    AppendGeneratedGlyphs(
-                        result,
-                        m_MarkerGenerator,
-                        markerRich,
-                        null,
-                        left,
-                        top,
-                        pixelsPerUnit,
-                        false);
-                }
-                else if (theme.drawBullets)
-                {
-                    float lineHeight = size * theme.lineSpacing;
-                    float bulletTop = top + lineHeight * 0.62f - theme.bulletSize * 0.5f;
-                    AddSolidNormalized(
-                        result,
-                        new Rect(left + theme.listMarkerGap * 0.5f, -bulletTop - theme.bulletSize, theme.bulletSize, theme.bulletSize),
-                        ThemeColor(theme.listMarkerColor));
-                }
+                MarkdownRichText markerRich = MarkdownRichTextBuilder.BuildPlainText(orderedMarker);
+                TextGenerationSettings markerSettings = CreateSettings(
+                    size,
+                    Mathf.Max(1f, markerArea),
+                    TextAnchor.UpperLeft,
+                    ThemeColor(theme.listMarkerColor));
+                m_MarkerGenerator.Populate(markerRich.Markup, markerSettings);
+                AppendGeneratedGlyphs(
+                    result,
+                    m_MarkerGenerator,
+                    markerRich,
+                    null,
+                    left,
+                    top,
+                    pixelsPerUnit,
+                    false);
+            }
+            else if (isListItem && theme.drawBullets)
+            {
+                float lineHeight = size * theme.lineSpacing;
+                float bulletTop = top + lineHeight * 0.62f - theme.bulletSize * 0.5f;
+                AddSolidNormalized(
+                    result,
+                    new Rect(left + theme.listMarkerGap * 0.5f, -bulletTop - theme.bulletSize, theme.bulletSize, theme.bulletSize),
+                    ThemeColor(theme.listMarkerColor));
             }
 
             AddQuoteBars(result, block, top, totalHeight);
@@ -1282,7 +1301,9 @@ namespace SS.UIComponent
                         ThemeColor(theme.strikeThroughColor));
                 }
 
-                if ((style & MarkdownInlineStyle.Link) != 0 && !string.IsNullOrEmpty(inline.Url) && m_EnableLinks)
+                if ((style & (MarkdownInlineStyle.Link | MarkdownInlineStyle.Footnote)) != 0 &&
+                    !string.IsNullOrEmpty(inline.Url) &&
+                    m_EnableLinks)
                 {
                     if (!result.Links.TryGetValue(inline.Url, out LinkRegion region))
                     {
@@ -1293,7 +1314,7 @@ namespace SS.UIComponent
                     Rect linkRect = new Rect(line.MinX - 1f, line.MinY - 2f, width + 2f, height + 4f);
                     region.Rects.Add(linkRect);
 
-                    if (theme.underlineLinks)
+                    if ((style & MarkdownInlineStyle.Link) != 0 && theme.underlineLinks)
                     {
                         AddSolidNormalized(
                             result,

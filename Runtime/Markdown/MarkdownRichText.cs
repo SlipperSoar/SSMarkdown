@@ -113,7 +113,7 @@ namespace SS.UIComponent
                 Color? color = null;
                 if ((style & MarkdownInlineStyle.Code) != 0)
                     color = codeColor;
-                else if ((style & MarkdownInlineStyle.Link) != 0)
+                else if ((style & (MarkdownInlineStyle.Link | MarkdownInlineStyle.Footnote)) != 0)
                     color = linkColor;
 
                 bool bold = (style & MarkdownInlineStyle.Bold) != 0;

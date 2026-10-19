@@ -18,6 +18,7 @@ namespace SS.UIComponent.Editor
         private SerializedProperty m_Theme;
         private SerializedProperty m_EnableLinks;
         private SerializedProperty m_OnLinkClicked;
+        private SerializedProperty m_OnFootnoteClicked;
         private SerializedProperty m_MaxImageWidth;
         private SerializedProperty m_MaxImageHeight;
         private bool m_ShowTheme = true;
@@ -33,6 +34,7 @@ namespace SS.UIComponent.Editor
             m_Theme = serializedObject.FindProperty("m_Theme");
             m_EnableLinks = serializedObject.FindProperty("m_EnableLinks");
             m_OnLinkClicked = serializedObject.FindProperty("m_OnLinkClicked");
+            m_OnFootnoteClicked = serializedObject.FindProperty("m_OnFootnoteClicked");
             m_MaxImageWidth = serializedObject.FindProperty("m_MaxImageWidth");
             m_MaxImageHeight = serializedObject.FindProperty("m_MaxImageHeight");
         }
@@ -84,6 +86,7 @@ namespace SS.UIComponent.Editor
             EditorGUILayout.LabelField("Links", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_EnableLinks);
             EditorGUILayout.PropertyField(m_OnLinkClicked);
+            EditorGUILayout.PropertyField(m_OnFootnoteClicked);
 
             EditorGUILayout.Space(8f);
             AppearanceControlsGUI();

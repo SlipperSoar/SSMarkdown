@@ -23,6 +23,7 @@ internal static class Program
         TestAutolinks();
         TestNestedFormatting();
         TestTables();
+        TestReferenceLinksAndFootnotes();
 
         Console.WriteLine();
         Console.WriteLine("Passed: " + s_Passed + "  Failed: " + s_Failed);
@@ -160,6 +161,30 @@ internal static class Program
         AssertEqual(1, escaped.Blocks.Count, "escaped table block count");
         AssertEqual("a | b", escaped.Blocks[0].Table.Rows[0][0].PlainText, "escaped pipe");
         AssertEqual("x|y", escaped.Blocks[0].Table.Rows[0][1].PlainText, "pipe in code span");
+    }
+
+    private static void TestReferenceLinksAndFootnotes()
+    {
+        string md =
+            "[docs]: https://example.com/docs \"Documentation\"\n\n" +
+            "Read [the docs][docs], [docs], and a note[^n].\n\n" +
+            "[^n]: Footnote with **bold** text.";
+        var doc = MarkdownParser.ParseText(md);
+
+        AssertEqual(1, doc.LinkReferences.Count, "link reference count");
+        AssertEqual(3, doc.Blocks.Count, "reference/footnote block count");
+        AssertTrue(doc.Blocks[0].Inlines.Any(s => s.Url == "https://example.com/docs"), "full reference link");
+        AssertTrue(doc.Blocks[0].Inlines.Any(s => s.Text == "[1]" && (s.Style & MarkdownInlineStyle.Footnote) != 0), "footnote reference");
+        AssertEqual(MarkdownBlockType.ThematicBreak, doc.Blocks[1].Type, "footnote separator");
+        AssertEqual(MarkdownBlockType.Footnote, doc.Blocks[2].Type, "footnote block");
+        AssertEqual(1, doc.Blocks[2].FootnoteNumber, "footnote number");
+        AssertTrue(doc.Blocks[2].Inlines.Any(s => s.Text == "bold" && (s.Style & MarkdownInlineStyle.Bold) != 0), "footnote inline style");
+
+        var imageDoc = MarkdownParser.ParseText("[logo]: logo.png\n\n![alt][logo]");
+        AssertEqual(1, imageDoc.Blocks.Count, "reference image block count");
+        AssertEqual(MarkdownBlockType.Image, imageDoc.Blocks[0].Type, "reference image type");
+        AssertEqual("logo.png", imageDoc.Blocks[0].ImageUrl, "reference image url");
+        AssertEqual("alt", imageDoc.Blocks[0].ImageAlt, "reference image alt");
     }
 
     private static void AssertTrue(bool condition, string name)

@@ -14,7 +14,8 @@ namespace SS.UIComponent
         ListItem,
         ThematicBreak,
         Table,
-        Image
+        Image,
+        Footnote
     }
 
     /// <summary>Inline styling flags. A single inline can combine several flags.</summary>
@@ -26,7 +27,8 @@ namespace SS.UIComponent
         Italic = 1 << 1,
         Code = 1 << 2,
         Link = 1 << 3,
-        Strikethrough = 1 << 4
+        Strikethrough = 1 << 4,
+        Footnote = 1 << 5
     }
 
     /// <summary>A run of inline text sharing the same style and link target.</summary>
@@ -54,6 +56,90 @@ namespace SS.UIComponent
         internal void Append(string text)
         {
             m_Text.Append(text);
+        }
+    }
+
+    /// <summary>A reference-style link definition such as <c>[docs]: https://...</c>.</summary>
+    public sealed class MarkdownLinkReference
+    {
+        public MarkdownLinkReference(string label, string url, string title = null)
+        {
+            Label = label;
+            Url = url;
+            Title = title;
+        }
+
+        public string Label { get; }
+        public string Url { get; }
+        public string Title { get; }
+
+        public static string NormalizeLabel(string label)
+        {
+            if (string.IsNullOrEmpty(label))
+                return string.Empty;
+
+            var sb = new StringBuilder(label.Length);
+            bool pendingSpace = false;
+            for (int i = 0; i < label.Length; i++)
+            {
+                char c = label[i];
+                if (char.IsWhiteSpace(c))
+                {
+                    pendingSpace = sb.Length > 0;
+                    continue;
+                }
+
+                if (pendingSpace)
+                {
+                    sb.Append(' ');
+                    pendingSpace = false;
+                }
+                sb.Append(char.ToLowerInvariant(c));
+            }
+            return sb.ToString();
+        }
+    }
+
+    /// <summary>A footnote definition parsed from <c>[^id]: ...</c>.</summary>
+    public sealed class MarkdownFootnote
+    {
+        public MarkdownFootnote(string id, int number, string text)
+        {
+            Id = id;
+            Number = number;
+            Text = text;
+        }
+
+        public string Id { get; }
+        public int Number { get; }
+        public string Text { get; }
+    }
+
+    internal sealed class MarkdownInlineContext
+    {
+        private readonly IReadOnlyDictionary<string, MarkdownLinkReference> m_References;
+        private readonly IReadOnlyDictionary<string, int> m_FootnoteNumbers;
+
+        public MarkdownInlineContext(
+            IReadOnlyDictionary<string, MarkdownLinkReference> references,
+            IReadOnlyDictionary<string, int> footnoteNumbers)
+        {
+            m_References = references;
+            m_FootnoteNumbers = footnoteNumbers;
+        }
+
+        public bool TryGetReference(string label, out MarkdownLinkReference reference)
+        {
+            reference = null;
+            return m_References != null &&
+                   m_References.TryGetValue(MarkdownLinkReference.NormalizeLabel(label), out reference);
+        }
+
+        public bool TryGetFootnoteNumber(string id, out int number)
+        {
+            number = 0;
+            return m_FootnoteNumbers != null &&
+                   m_FootnoteNumbers.TryGetValue(MarkdownLinkReference.NormalizeLabel(id), out number);
         }
     }
 
@@ -158,6 +244,12 @@ namespace SS.UIComponent
         /// <summary>Alt text for an image block.</summary>
         public string ImageAlt { get; internal set; }
 
+        /// <summary>Footnote identifier when this is a footnote block.</summary>
+        public string FootnoteId { get; internal set; }
+
+        /// <summary>Footnote display number when this is a footnote block.</summary>
+        public int FootnoteNumber { get; internal set; }
+
         public List<MarkdownInline> Inlines { get; }
 
         public string PlainText
@@ -194,16 +286,28 @@ namespace SS.UIComponent
     public sealed class MarkdownDocument
     {
         private readonly List<MarkdownBlock> m_Blocks;
+        private readonly IReadOnlyDictionary<string, MarkdownLinkReference> m_LinkReferences;
+        private readonly IReadOnlyList<MarkdownFootnote> m_Footnotes;
 
-        internal MarkdownDocument(string source, List<MarkdownBlock> blocks)
+        internal MarkdownDocument(
+            string source,
+            List<MarkdownBlock> blocks,
+            Dictionary<string, MarkdownLinkReference> linkReferences = null,
+            List<MarkdownFootnote> footnotes = null)
         {
             Source = source ?? string.Empty;
             m_Blocks = blocks ?? new List<MarkdownBlock>();
+            m_LinkReferences = linkReferences ?? new Dictionary<string, MarkdownLinkReference>(StringComparer.Ordinal);
+            m_Footnotes = footnotes ?? new List<MarkdownFootnote>();
         }
 
         public string Source { get; }
 
         public IReadOnlyList<MarkdownBlock> Blocks => m_Blocks;
+
+        public IReadOnlyDictionary<string, MarkdownLinkReference> LinkReferences => m_LinkReferences;
+
+        public IReadOnlyList<MarkdownFootnote> Footnotes => m_Footnotes;
 
         public string PlainText
         {

@@ -114,7 +114,7 @@ Demo~/
 ## 待办事项
 
 - [x] GFM 表格解析与列宽排版
-- [ ] 引用式链接（reference-style links）与脚注
+- [x] 引用式链接（reference-style links）与脚注
 - [ ] 任务列表 `- [ ]` / `- [x]` 的复选框绘制
 - [x] 图片渲染：Resources / AssetBundle 路径、HTTP(S) URL 和加载失败占位
 - [ ] 代码块语言标签与可选的语法高亮接口
@@ -133,6 +133,7 @@ Demo~/
 - **文档级排版**：按块级元素独立排版，支持标题层级、段落间距、嵌套列表、引用缩进、代码块背景、表格和分隔线。
 - **内联样式**：加粗、斜体、删除线、行内代码、链接、自动链接、HTML 实体和反斜杠转义。
 - **可点击链接**：`onLinkClicked` 事件返回 URL，支持 `TryGetLinkAtLocalPosition` 做自定义悬浮提示。
+- **引用式链接与脚注**：支持 `[text][id]`、短引用 `[id]`、引用图片，以及文档末尾自动汇总的 `[^id]` 脚注。
 - **图片**：支持 HTTP(S)、Resources 相对路径和 AssetBundle 地址，异步加载并以 RawImage 叠加渲染；失败时显示错误占位。
 - **主题**：内置 Light / Dark 两套配色，切换主题时正文、标题、引用与底板一起更新。
 - **ScrollRect / LayoutGroup 友好**：实现 `ILayoutElement`，搭配 `ContentSizeFitter` 自动撑高；装饰层会跟随滚动内容。
@@ -153,6 +154,7 @@ Demo~/
 | `MarkdownTheme theme` | 颜色、背景、间距、标题比例等。 |
 | `bool enableLinks` | 是否启用链接命中与事件。 |
 | `MarkdownLinkEvent onLinkClicked` | 链接点击事件，参数为 URL。 |
+| `MarkdownLinkEvent onFootnoteClicked` | 脚注引用点击事件，参数为脚注 id。 |
 | `float maxImageWidth` | 图片最大宽度；0 表示使用可用内容宽度。 |
 | `float maxImageHeight` | 图片最大高度；0 表示不限制。 |
 | `MarkdownImageLoader imageLoader` | 自定义图片加载器；为 null 时使用内置 HTTP / Resources / AssetBundle 加载。 |
@@ -242,6 +244,28 @@ Scroll View (ScrollRect)
 
 Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时，请导入一个覆盖所需字符的 TTF/OTF 并赋给 `font`。
 
+## 引用式链接与脚注
+
+引用式链接将地址集中定义，正文只保留引用 label：
+
+```markdown
+Read [the docs][docs] or the shortcut [docs].
+
+[docs]: https://example.com/docs "Documentation"
+```
+
+支持完整引用 `[text][id]`、折叠引用 `[text][]`、短引用 `[text]`，以及引用图片 `![alt][id]`。label 不区分大小写，重复定义以第一条为准。
+
+脚注使用 `[^id]` 引用，定义会在文档末尾统一渲染：
+
+```markdown
+A note[^1].
+
+[^1]: Footnotes support **inline formatting**.
+```
+
+脚注引用是可点击的，点击后触发 `onFootnoteClicked`，参数为脚注 id。
+
 ## Markdown 支持范围
 
 **块级**
@@ -262,6 +286,8 @@ Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时
 - `~~strikethrough~~`
 - `` `inline code` ``
 - `[text](url "title")`
+- `[text][id]`、`[id]` 引用式链接和引用图片
+- `[^id]` 脚注引用，定义会在文档末尾汇总
 - `<https://...>` 自动链接
 - 裸 URL 自动链接
 - `&amp;`、`&lt;`、`&#x...;` 等常见实体
@@ -269,9 +295,9 @@ Unity 内置的 `LegacyRuntime` 字体不包含中日韩字形。显示中文时
 
 **有意不支持（见待办）**
 
-- 脚注、引用式链接、任务列表
-- 语法高亮、表格内嵌图片
+- 任务列表
 - 原始 HTML 样式（标签会被忽略，不参与渲染）
+- 语法高亮、表格内嵌图片
 
 解析器对未知结构采取“退化为普通文本”的策略，不会在运行时抛异常。
 

@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Reference-style links and images, plus footnote references rendered in a trailing footnote section with `onFootnoteClicked`.
+
 ## [1.1.3] - 2026-10-18
 
 ### Changed

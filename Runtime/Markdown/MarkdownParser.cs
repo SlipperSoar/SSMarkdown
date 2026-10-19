@@ -40,6 +40,19 @@ namespace SS.UIComponent
             @"^:?-{3,}:?$",
             RegexOptions.CultureInvariant);
 
+        private static readonly Regex s_LinkReference = new Regex(
+            @"^ {0,3}\[(?<label>[^\]]+)\]:[ \t]*(?<dest><[^>\n]*>|[^\s]+)(?:[ \t]+(?<title>""[^""]*""|'[^']*'|\([^)]*\)))?[ \t]*$",
+            RegexOptions.CultureInvariant);
+
+        private static readonly Regex s_FootnoteDefinition = new Regex(
+            @"^ {0,3}\[\^(?<id>[^\]]+)\]:[ \t]*(?<text>.*)$",
+            RegexOptions.CultureInvariant);
+
+        private Dictionary<string, MarkdownLinkReference> m_LinkReferences;
+        private List<MarkdownFootnote> m_Footnotes;
+        private Dictionary<string, int> m_FootnoteNumbers;
+        private MarkdownInlineContext m_InlineContext;
+
         /// <summary>Parse a Markdown string into a block tree.</summary>
         public MarkdownDocument Parse(string markdown)
         {
@@ -51,16 +64,136 @@ namespace SS.UIComponent
             source = ExpandTabs(source);
 
             var lines = new List<string>(source.Split('\n'));
+            ExtractDefinitions(lines);
+            m_InlineContext = new MarkdownInlineContext(m_LinkReferences, m_FootnoteNumbers);
+
             var blocks = new List<MarkdownBlock>();
             ParseLines(lines, 0, blocks);
+            AppendFootnotes(blocks);
 
-            return new MarkdownDocument(source, blocks);
+            return new MarkdownDocument(source, blocks, m_LinkReferences, m_Footnotes);
         }
 
         /// <summary>Static convenience wrapper.</summary>
         public static MarkdownDocument ParseText(string markdown)
         {
             return new MarkdownParser().Parse(markdown);
+        }
+
+        private void ExtractDefinitions(List<string> lines)
+        {
+            m_LinkReferences = new Dictionary<string, MarkdownLinkReference>(StringComparer.Ordinal);
+            m_Footnotes = new List<MarkdownFootnote>();
+            m_FootnoteNumbers = new Dictionary<string, int>(StringComparer.Ordinal);
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                Match footnote = s_FootnoteDefinition.Match(lines[i]);
+                if (footnote.Success)
+                {
+                    string id = MarkdownLinkReference.NormalizeLabel(footnote.Groups["id"].Value);
+                    if (id.Length == 0 || m_FootnoteNumbers.ContainsKey(id))
+                        continue;
+
+                    var text = new StringBuilder(footnote.Groups["text"].Value.TrimEnd());
+                    lines[i] = string.Empty;
+
+                    int j = i + 1;
+                    while (j < lines.Count)
+                    {
+                        if (IsBlank(lines[j]))
+                        {
+                            int k = j + 1;
+                            while (k < lines.Count && IsBlank(lines[k]))
+                                k++;
+                            if (k < lines.Count && GetIndent(lines[k]) >= 2)
+                            {
+                                text.Append('\n');
+                                lines[j] = string.Empty;
+                                j++;
+                                continue;
+                            }
+                            break;
+                        }
+
+                        if (GetIndent(lines[j]) < 2)
+                            break;
+
+                        text.Append('\n').Append(RemoveIndent(lines[j], 2).TrimEnd());
+                        lines[j] = string.Empty;
+                        j++;
+                    }
+
+                    int number = m_Footnotes.Count + 1;
+                    m_Footnotes.Add(new MarkdownFootnote(id, number, text.ToString().Trim()));
+                    m_FootnoteNumbers[id] = number;
+                    i = j - 1;
+                    continue;
+                }
+
+                Match reference = s_LinkReference.Match(lines[i]);
+                if (!reference.Success)
+                    continue;
+
+                string label = reference.Groups["label"].Value;
+                if (label.StartsWith("^", StringComparison.Ordinal))
+                    continue;
+
+                label = MarkdownLinkReference.NormalizeLabel(label);
+                if (label.Length == 0 || m_LinkReferences.ContainsKey(label))
+                    continue;
+
+                string destination = reference.Groups["dest"].Value;
+                if (destination.Length >= 2 && destination[0] == '<' && destination[destination.Length - 1] == '>')
+                    destination = destination.Substring(1, destination.Length - 2);
+
+                string title = reference.Groups["title"].Value;
+                if (title.Length >= 2)
+                    title = title.Substring(1, title.Length - 2);
+
+                m_LinkReferences[label] = new MarkdownLinkReference(
+                    label,
+                    UnescapeReference(destination),
+                    UnescapeReference(title));
+                lines[i] = string.Empty;
+            }
+        }
+
+        private static string UnescapeReference(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.IndexOf('\\') < 0)
+                return value;
+
+            var sb = new StringBuilder(value.Length);
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] == '\\' && i + 1 < value.Length)
+                {
+                    sb.Append(value[++i]);
+                }
+                else
+                {
+                    sb.Append(value[i]);
+                }
+            }
+            return sb.ToString();
+        }
+
+        private void AppendFootnotes(List<MarkdownBlock> blocks)
+        {
+            if (m_Footnotes == null || m_Footnotes.Count == 0)
+                return;
+
+            blocks.Add(NewBlock(MarkdownBlockType.ThematicBreak, 0));
+            for (int i = 0; i < m_Footnotes.Count; i++)
+            {
+                MarkdownFootnote footnote = m_Footnotes[i];
+                var block = NewBlock(MarkdownBlockType.Footnote, 0);
+                block.FootnoteId = footnote.Id;
+                block.FootnoteNumber = footnote.Number;
+                AddInlines(block, footnote.Text);
+                blocks.Add(block);
+            }
         }
 
         private void ParseLines(IReadOnlyList<string> lines, int quoteDepth, List<MarkdownBlock> output)
@@ -244,10 +377,10 @@ namespace SS.UIComponent
             return true;
         }
 
-        private static MarkdownTableCell ParseTableCell(string text)
+        private MarkdownTableCell ParseTableCell(string text)
         {
             var cell = new MarkdownTableCell();
-            var inlines = MarkdownInlineParser.Parse(text.Trim());
+            var inlines = MarkdownInlineParser.Parse(text.Trim(), m_InlineContext);
             for (int i = 0; i < inlines.Count; i++)
                 cell.Inlines.Add(inlines[i]);
             return cell;
@@ -555,9 +688,9 @@ namespace SS.UIComponent
             return i;
         }
 
-        private static void AddParagraphBlocks(string text, int quoteDepth, List<MarkdownBlock> output)
+        private void AddParagraphBlocks(string text, int quoteDepth, List<MarkdownBlock> output)
         {
-            List<MarkdownInline> inlines = MarkdownInlineParser.Parse(text);
+            List<MarkdownInline> inlines = MarkdownInlineParser.Parse(text, m_InlineContext);
             var textRun = new List<MarkdownInline>();
 
             int index = 0;
@@ -592,7 +725,7 @@ namespace SS.UIComponent
             FlushTextRun(textRun, quoteDepth, output);
         }
 
-        private static void FlushTextRun(List<MarkdownInline> textRun, int quoteDepth, List<MarkdownBlock> output)
+        private void FlushTextRun(List<MarkdownInline> textRun, int quoteDepth, List<MarkdownBlock> output)
         {
             if (textRun.Count == 0)
                 return;
@@ -648,9 +781,9 @@ namespace SS.UIComponent
             };
         }
 
-        private static void AddInlines(MarkdownBlock block, string text)
+        private void AddInlines(MarkdownBlock block, string text)
         {
-            var inlines = MarkdownInlineParser.Parse(text);
+            var inlines = MarkdownInlineParser.Parse(text, m_InlineContext);
             for (int i = 0; i < inlines.Count; i++)
                 block.Inlines.Add(inlines[i]);
         }
